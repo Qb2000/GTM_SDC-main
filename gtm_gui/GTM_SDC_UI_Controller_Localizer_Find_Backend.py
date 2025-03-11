@@ -116,15 +116,43 @@ def find_trigger(file_name, df, df_list, df_name_list, bin_size_list):
                 if np.mean(hist) > 3:
                     background = fit_bkg(bin_edges[:-1], hist, bin_edges[:-1])
                     threshold = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background))
-                    
-                    hist2 = np.delete(hist, np.argwhere(hist > threshold))
-                    bin_edges2 = np.delete(bin_edges[:-1], np.argwhere(hist > threshold))
-                    
-                    background = fit_bkg(bin_edges2, hist2, bin_edges[:-1])
-                    threshold = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background))
                 else:
                     background = np.ones(len(hist)) * np.mean(hist)
                     threshold = poisson.ppf(1 - 0.001/bin_number, background)
+                    
+                trigger_time_index = np.argwhere(hist > threshold)
+                hist2 = np.delete(hist,trigger_time_index)
+                bin_edges2 = np.delete(bin_edges[:-1], trigger_time_index)
+                
+                exclude_times=1
+                while len(trigger_time_index)>0:
+                    
+                    # print(f'len of bin_edges2: {len(bin_edges2[:-1])}')
+                    # print(f'len of hist2: {len(hist2)}')
+                    # print(marker_1)
+                    exclude_times+=1
+                    
+                    if np.mean(hist2) > 3:
+                        background = fit_bkg(bin_edges2, hist2, bin_edges[:-1])
+                        threshold = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background))
+                        background2 = fit_bkg(bin_edges2, hist2, bin_edges2)
+                        threshold2 = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background2))
+                        
+                        
+                    else:
+                        background = np.ones(len(hist)) * np.mean(hist2)
+                        threshold = poisson.ppf(1 - 0.001/bin_number, background)
+                        background2 = np.ones(len(hist2)) * np.mean(hist2)
+                        threshold2 = poisson.ppf(1 - 0.001/bin_number, background2)
+                        
+                    trigger_time_index = np.argwhere(hist2 > threshold2)
+                    hist2 = np.delete(hist2,trigger_time_index)
+                    bin_edges2 = np.delete(bin_edges2, trigger_time_index)
+                    
+                    if exclude_times > 50:
+                        break
+                    
+                    
                 
                 # Pick up triggered bin
                 pass_threshold_arg = np.argwhere(hist > threshold)
@@ -265,6 +293,8 @@ def find_time_info(file_name, df_list, df_name_list, trigger_time, end_time, bes
             # Get t50 & t90
             t50 = t75 - t25
             t90 = t95 - t05
+            
+            
 
     fig.supxlabel('Time [s]')
     fig.supylabel('Count Rate [#/s]')
@@ -309,7 +339,7 @@ def report_trigger_info(file_name, df_list, df_name_list, trigger_time, data_wit
         'M1 BKG Count': [], 'M2 BKG Count': [], 'M3 BKG Count': [], 'M4 BKG Count': [],
         'S1 BKG Count': [], 'S2 BKG Count': [], 'S3 BKG Count': [], 'S4 BKG Count': [],
     }
-
+    brightest = 0
     for data_idx, data in enumerate(df_list): # run M, M1~4, S & S1~4
         
         if (df_name_list[data_idx] != 'Master') and (df_name_list[data_idx] != 'Slave'): # only run M1~4 & S1~4
@@ -318,7 +348,7 @@ def report_trigger_info(file_name, df_list, df_name_list, trigger_time, data_wit
             hist, bin_edges = \
             np.histogram(data['Relative Time']-trigger_time, bins=best_bin_edges, density=False)
                 
-            # Fit bkg
+            # Fit bkg 有問題
             used_head_tail_bin = 50
             bkg = fit_bkg(x=np.concatenate((bin_edges[:used_head_tail_bin], bin_edges[-used_head_tail_bin:])), 
                           y=np.concatenate((hist[:used_head_tail_bin], hist[-used_head_tail_bin:])), 
@@ -327,28 +357,81 @@ def report_trigger_info(file_name, df_list, df_name_list, trigger_time, data_wit
             # Total data - bkg = src
             src = hist - bkg
             
-            # Calculate arg of t05 & t95
-            t05_arg = int((t05-data_with_grb_start_time)/best_bin_size)
-            t95_arg = int((t95-data_with_grb_start_time)/best_bin_size)
-            
-            # Save count info.
-            dict_count[f'{df_name_list[data_idx]} SRC Count'].append(
-                np.sum(src[t05_arg:t95_arg+1])
-                )
-            dict_count[f'{df_name_list[data_idx]} BKG Count'].append(
-                np.sum(bkg[t05_arg:t95_arg+1])
-                )
-            
+            # if GRB > 10 sec , find the brighest 10 sec for a better localization
+            if t90 > 10 :
+                
+                # use 10 sec bin go through histgram , report the heighest 10 sec bin
+                num_of_bins = 10 // best_bin_size
+                
+                for src_index in range(int(len(src) - num_of_bins)) :
+                    brightness = np.sum(src[src_index : src_index + num_of_bins ])
+                    if brightness > brightest:
+                        # print(f'case:{df_name_list[data_idx]},brightness:{brightness},brightest:{brightest}')
+                        brightest = brightness
+                        brightest_time_index = src_index
+                                   
+            else:
+                # Calculate arg of t05 & t95
+                t05_arg = int((t05-data_with_grb_start_time)/best_bin_size)
+                t95_arg = int((t95-data_with_grb_start_time)/best_bin_size)
+                
+                # Save count info.
+                dict_count[f'{df_name_list[data_idx]} SRC Count'].append(
+                    np.sum(src[t05_arg:t95_arg+1])
+                    )
+                dict_count[f'{df_name_list[data_idx]} BKG Count'].append(
+                    np.sum(bkg[t05_arg:t95_arg+1])
+                    )
+                trigger_time_index = 0
+        
+    if t90 > 10:
+        for data_idx, data in enumerate(df_list):   
+            if (df_name_list[data_idx] != 'Master') and (df_name_list[data_idx] != 'Slave'): # only run M1~4 & S1~4
+        
+                # Bin data
+                hist, bin_edges = \
+                np.histogram(data['Relative Time']-trigger_time, bins=best_bin_edges, density=False)
+                    
+                # Fit bkg 有問題
+                used_head_tail_bin = 50
+                bkg = fit_bkg(x=np.concatenate((bin_edges[:used_head_tail_bin], bin_edges[-used_head_tail_bin:])), 
+                            y=np.concatenate((hist[:used_head_tail_bin], hist[-used_head_tail_bin:])), 
+                            text_x=bin_edges[:-1])
+                
+                # Total data - bkg = src
+                src = hist - bkg         
+                # Save count info.        
+                dict_count[f'{df_name_list[data_idx]} SRC Count'].append(
+                    np.sum(src[brightest_time_index:brightest_time_index+num_of_bins])
+                    )
+                dict_count[f'{df_name_list[data_idx]} BKG Count'].append(
+                    np.sum(bkg[brightest_time_index:brightest_time_index+num_of_bins])
+                    )
+        trigger_time_index = brightest_time_index*best_bin_size - used_head_tail_bin*best_bin_size
+        # print(trigger_time_index)
+    
+    
+    # print(trigger_time)   
+        
+    # trigger_index = np.where(np.diff(np.sign(data['Relative Time']-trigger_time-trigger_time_index)))[0][np.where(data.loc[np.where(np.diff(np.sign(data['Relative Time']-trigger_time-trigger_time_index)))]['Relative Time']!=max(data['Relative Time']))[0][0]]
+    crossing_indices = np.where(np.diff(np.sign(data['Relative Time'] - ( trigger_time + trigger_time_index ))))[0]
+    filtered_indices = crossing_indices[data.iloc[crossing_indices]['Relative Time'] != data['Relative Time'].max()]
+    trigger_index = filtered_indices[0]
+
     # Convert dictionary to df
     df_count = pd.DataFrame.from_dict(dict_count)
-
+##########################################################################
     # Collect time info.
     time = recover_time(
-                day_of_year=158, 
-                hour=2, 
-                minute=0, 
-                second=12, 
+                # day_of_year=158, 
+                # hour=2, 
+                # minute=0, 
+                # second=12, 
                 # subsecond=df_attitude.iloc[0]['Subsecond']
+                int(data.iloc[trigger_index]['Day of Year']), 
+                int(data.iloc[trigger_index]['Hour']), 
+                int(data.iloc[trigger_index]['Minute']), 
+                int(data.iloc[trigger_index]['Second'])
             )
     
     dict_attitude = {
@@ -356,7 +439,7 @@ def report_trigger_info(file_name, df_list, df_name_list, trigger_time, data_wit
         'Qw': [5442], 'Qx': [24750], 'Qy': [60255], 'Qz': [20090],
         }
     df_attitude = pd.DataFrame.from_dict(dict_attitude)
-
+##########################################################################
     # Collect all used data to output
     df_output = pd.concat([df_attitude, df_count], axis=1)
     df_output.insert(0, 'T90', [t90])
