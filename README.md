@@ -1,5 +1,4 @@
-Stop update until 2024/08/09!
-update 2025/03/11!
+Last update: 2025/03/11!
 
 ## Introduction
 
