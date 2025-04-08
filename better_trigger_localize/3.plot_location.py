@@ -224,8 +224,7 @@ milkyway_dec = milkyway_dec[np.argsort(milkyway_ra)]
 milkyway_ra = milkyway_ra[np.argsort(milkyway_ra)]
 
 # Plot figure
-fig1, ax1 = plt.subplots(1, 1, figsize=(10, 5), 
-                         subplot_kw={'projection': 'mollweide'}, constrained_layout=True)
+fig1, ax1 = plt.subplots(1, 1, figsize=(10, 5), subplot_kw={'projection': 'mollweide'})
 
 # Define some plot info
 chi_min = np.min(chi_square)
@@ -234,7 +233,7 @@ plot_index = chi_square < chi_max
 
 # Plot earth center
 ax1.scatter(earth_ra * (np.pi/180) - np.pi, earth_dec * (np.pi/180), 
-            marker='x', s=100, linewidth=1, color='deepskyblue', zorder=7)
+            marker='x', s=100, linewidth=1, color='deepskyblue', label='Center of Earth', zorder=7)
 
 # Plot earth obstacle (not yet check detail, looks correct!!!)
 if is_horizon_split==True:
@@ -247,49 +246,59 @@ else:
     ax1.plot(horizon_ra * (np.pi/180) - np.pi, horizon_dec * (np.pi/180), 
              linewidth=1, color='skyblue', alpha=0.3, zorder=8)
     ax1.fill(horizon_ra * (np.pi/180) - np.pi, horizon_dec * (np.pi/180), 
-             color='skyblue', alpha=0.3, zorder=8)
+             color='skyblue', alpha=0.3, label='Sky Covered by Earth', zorder=8)
 
 # Plot sun
 ax1.scatter(sun_ra * (np.pi/180) - np.pi, sun_dec * (np.pi/180), 
-            marker='o', s=100, color='gold', zorder=6)
+            marker='o', s=100, color='gold', label='Sun', zorder=6)
 
 # Plot milkyway
 ax1.plot(milkyway_ra * (np.pi/180) - np.pi, milkyway_dec * (np.pi/180), 
-         linewidth=1, color='silver', zorder=5)
+         linewidth=1, color='silver', label='Disk of Milkyway', zorder=5)
 ax1.scatter(milkyway_center_ra * (np.pi/180) - np.pi, milkyway_center_dec * (np.pi/180), 
-            marker='o', s=100, color='silver', zorder=5)
+            marker='o', s=100, color='silver', label='Center of Milkyway', zorder=5)
 
 # Plot distribution of location 
 scatter = ax1.scatter(table_ra[plot_index] * (np.pi/180) - np.pi, table_dec[plot_index] * (np.pi/180), 
                       marker='o', s=10, c=chi_square[plot_index], edgecolors='none',
                       cmap=cmap, vmin=chi_min, vmax=chi_max, zorder=1)
-cbar = plt.colorbar(scatter, ax=ax1, 
-                    orientation='horizontal', aspect=70, pad=0.03,
+cbar = fig1.colorbar(scatter, 
+                    orientation='horizontal', aspect=33, pad=0.03,
                     boundaries=np.linspace(chi_min, chi_max, 100), 
-                    ticks=[chi_min, chi_min+2.3, chi_min+4.6, chi_min+9.6],)
+                    ticks=[chi_min, chi_min+2.3, chi_min+4.6, chi_min+9.6])
 cbar.ax.tick_params(direction='in', length=10, width=2, color='black', labelsize=10)
+cbar.set_label('Chi-Squared', fontsize=10, weight='bold')
+cbar.ax.set_position([0.14, 0.10, 0.45, 0.03])  # [left, bottom, width, height]
 ax1.tricontour(table_ra * (np.pi/180) - np.pi, table_dec * (np.pi/180), 
                np.array(chi_square, dtype='float'), levels=[chi_min+2.3, chi_min+4.6, chi_min+9.6], 
                linewidths=1, colors='black', zorder=2)
 
 # Plot ground truth and bset fit 
 ax1.scatter(real_grb_ra * (np.pi/180) - np.pi, real_grb_dec * (np.pi/180), 
-            marker='x', s=100, linewidth=2, color='limegreen', zorder=3)
+            marker='x', s=100, linewidth=2, color='limegreen', label='Test Location (Ground Truth)', zorder=3)
 ax1.scatter(location_ra * (np.pi/180) - np.pi, location_dec * (np.pi/180), 
-            marker='x', s=100, linewidth=2, color='lightcoral', zorder=4)
+            marker='x', s=100, linewidth=2, color='lightcoral', label='Best Fit Location', zorder=4)
 
 # Adjust ticks label
 xticks = np.array([-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150]) * (np.pi/180.0)
 xtick_labels = ['30°', '60°', '90°', '120°', '150°', '180°', '210°', '240°', '270°', '300°', '330°']
-plt.xticks(xticks, xtick_labels, fontsize=10)
+plt.xticks(xticks, xtick_labels, fontsize=12)
 yticks = np.array([-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75]) * (np.pi/180.0)
 ytick_labels = ['-75°', '-60°', '-45°', '-30°', '-15°', '0°', '15°', '30°', '45°', '60°', '75°']
-plt.yticks(yticks, ytick_labels, fontsize=10)
+plt.yticks(yticks, ytick_labels, fontsize=12)
 
 # Save figure
 ax1.grid(linewidth=0.3)
-ax1.set_xlabel('R.A.', fontsize=10)
-ax1.set_ylabel('Dec.', fontsize=10)
-fig1.savefig(f'./3.location/sky_map_{test_fluence}_{grb_theta}_{grb_phi}.png', dpi=300)
+ax1.set_xlabel('R.A.', fontsize=12, weight='bold')
+ax1.set_ylabel('Dec.', fontsize=12, weight='bold')
+
+handles, labels = plt.gca().get_legend_handles_labels()
+legend_order_list = [6, 5, 0, 1, 2, 3, 4]
+fig1.legend([handles[i] for i in legend_order_list], [labels[i] for i in legend_order_list], loc='lower right'
+            , bbox_to_anchor=(0.85, 0.03), fontsize=8, borderpad=0.5, labelspacing=0.4, handlelength=1.5)
+plt.title('All Sky Map', fontsize=25, weight='bold', loc='center', pad=20)
+
+fig1.savefig(f'./3.location/sky_map_{test_fluence}_{grb_theta}_{grb_phi}.png', bbox_inches='tight', dpi=300)
+plt.show(fig1)
 plt.close(fig1)
 #====================
