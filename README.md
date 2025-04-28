@@ -1,4 +1,4 @@
-Last update: 2025/04/6!
+Last update: 2025/4/6!
 
 ## Introduction
 
