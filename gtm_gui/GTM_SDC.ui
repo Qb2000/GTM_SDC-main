@@ -55,7 +55,7 @@
      </font>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tab_flow">
      <attribute name="title">
@@ -79,8 +79,8 @@
        <rect>
         <x>20</x>
         <y>10</y>
-        <width>390</width>
-        <height>140</height>
+        <width>461</width>
+        <height>151</height>
        </rect>
       </property>
       <property name="font">
@@ -100,8 +100,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>371</width>
-         <height>101</height>
+         <width>451</width>
+         <height>119</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="flow_operation_login_form_layout">
@@ -212,8 +212,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>431</width>
-         <height>71</height>
+         <width>440</width>
+         <height>80</height>
         </rect>
        </property>
        <layout class="QHBoxLayout" name="flow_socc_operation_horizontal_layout">
@@ -223,7 +223,7 @@
         <item>
          <layout class="QVBoxLayout" name="flow_socc_operation_update_vertical_layout">
           <property name="spacing">
-           <number>-1</number>
+           <number>6</number>
           </property>
           <property name="sizeConstraint">
            <enum>QLayout::SetDefaultConstraint</enum>
@@ -290,8 +290,8 @@
        <rect>
         <x>20</x>
         <y>410</y>
-        <width>390</width>
-        <height>140</height>
+        <width>451</width>
+        <height>151</height>
        </rect>
       </property>
       <property name="font">
@@ -311,8 +311,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>371</width>
-         <height>101</height>
+         <width>392</width>
+         <height>119</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="flow_archiving_login_form_layout">
@@ -423,8 +423,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>431</width>
-         <height>71</height>
+         <width>440</width>
+         <height>80</height>
         </rect>
        </property>
        <layout class="QHBoxLayout" name="flow_operation_processing_horizontal_layout">
@@ -493,7 +493,7 @@
         <x>20</x>
         <y>560</y>
         <width>450</width>
-        <height>105</height>
+        <height>111</height>
        </rect>
       </property>
       <property name="font">
@@ -511,7 +511,7 @@
          <x>10</x>
          <y>30</y>
          <width>431</width>
-         <height>71</height>
+         <height>80</height>
         </rect>
        </property>
        <layout class="QHBoxLayout" name="flow_processing_archiving_group_horizontal_layout">
@@ -668,7 +668,7 @@ p, li { white-space: pre-wrap; }
       <widget class="QPushButton" name="mtl_generate_button">
        <property name="geometry">
         <rect>
-         <x>130</x>
+         <x>240</x>
          <y>500</y>
          <width>190</width>
          <height>40</height>
@@ -690,7 +690,7 @@ p, li { white-space: pre-wrap; }
          <x>10</x>
          <y>150</y>
          <width>430</width>
-         <height>320</height>
+         <height>331</height>
         </rect>
        </property>
        <property name="font">
@@ -708,7 +708,7 @@ p, li { white-space: pre-wrap; }
           <x>10</x>
           <y>30</y>
           <width>411</width>
-          <height>71</height>
+          <height>74</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="mtl_start_time_horizontal_layout">
@@ -769,7 +769,7 @@ p, li { white-space: pre-wrap; }
           <x>10</x>
           <y>110</y>
           <width>411</width>
-          <height>141</height>
+          <height>154</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="mtl_period_horizontal_layout">
@@ -887,6 +887,19 @@ p, li { white-space: pre-wrap; }
          </item>
         </layout>
        </widget>
+      </widget>
+      <widget class="QPushButton" name="mtl_specific_MTL">
+       <property name="geometry">
+        <rect>
+         <x>30</x>
+         <y>500</y>
+         <width>191</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>specific MTL</string>
+       </property>
       </widget>
      </widget>
      <widget class="QGroupBox" name="cmd_group">
@@ -1013,7 +1026,7 @@ p, li { white-space: pre-wrap; }
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>91</width>
+         <width>110</width>
          <height>71</height>
         </rect>
        </property>
@@ -1073,7 +1086,7 @@ p, li { white-space: pre-wrap; }
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>121</width>
+         <width>147</width>
          <height>71</height>
         </rect>
        </property>
@@ -1134,7 +1147,7 @@ p, li { white-space: pre-wrap; }
          <x>10</x>
          <y>30</y>
          <width>121</width>
-         <height>101</height>
+         <height>107</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="decoder_science_export_vertical_layout">
@@ -1235,7 +1248,7 @@ p, li { white-space: pre-wrap; }
          <rect>
           <x>10</x>
           <y>30</y>
-          <width>231</width>
+          <width>246</width>
           <height>71</height>
          </rect>
         </property>
@@ -1338,7 +1351,7 @@ p, li { white-space: pre-wrap; }
          <rect>
           <x>10</x>
           <y>30</y>
-          <width>231</width>
+          <width>246</width>
           <height>71</height>
          </rect>
         </property>
@@ -1670,6 +1683,47 @@ p, li { white-space: pre-wrap; }
        <enum>Qt::Horizontal</enum>
       </property>
      </widget>
+     <widget class="QGroupBox" name="decoder_lg_hg_together_group">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>520</y>
+        <width>160</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
+      <property name="title">
+       <string>lg_hg_together</string>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
+      </property>
+      <widget class="QCheckBox" name="decoder_lg_hg_together_on_check_box">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>150</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>On</string>
+       </property>
+      </widget>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_calibrator">
      <attribute name="title">
@@ -1802,8 +1856,8 @@ p, li { white-space: pre-wrap; }
          <rect>
           <x>10</x>
           <y>30</y>
-          <width>191</width>
-          <height>71</height>
+          <width>192</width>
+          <height>74</height>
          </rect>
         </property>
         <layout class="QFormLayout" name="find_slice_time_form_layout">
@@ -1847,9 +1901,9 @@ p, li { white-space: pre-wrap; }
       <widget class="QGroupBox" name="find_slice_energy_group">
        <property name="geometry">
         <rect>
-         <x>230</x>
+         <x>220</x>
          <y>160</y>
-         <width>210</width>
+         <width>231</width>
          <height>110</height>
         </rect>
        </property>
@@ -1877,8 +1931,8 @@ p, li { white-space: pre-wrap; }
          <rect>
           <x>10</x>
           <y>30</y>
-          <width>191</width>
-          <height>71</height>
+          <width>212</width>
+          <height>74</height>
          </rect>
         </property>
         <layout class="QFormLayout" name="find_slice_energy_form_layout">
@@ -2074,7 +2128,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>540</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

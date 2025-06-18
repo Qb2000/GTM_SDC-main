@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+        <GTM_Mission_Timeline xsi:noNamespaceSchemaLocation="schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <header>
+                <originator>SDC</originator>
+                <destination>SOCC</destination>
+                <satellite_name>FS8B</satellite_name>
+                <generation_time>2025-06-17T04:36:09</generation_time>
+                <file_name>FS8B_20250623_timeline.xml</file_name>
+                <instrument>GTM</instrument>
+                <start_date>2025-06-23T00:00:01</start_date>
+                <end_date>2025-06-23T00:30:01</end_date>
+            </header>
+            <body>
+        
+                        <time_line>
+                            <!-- 開啟 GTM -->
+                            <UTC>2025-06-23T00:00:01</UTC>
+                            <action>ADD</action>
+                            <duration>00:00:00.20</duration>
+                            <quaternion_1>NA</quaternion_1>
+                            <quaternion_2>NA</quaternion_2>
+                            <quaternion_3>NA</quaternion_3>
+                            <quaternion_4>NA</quaternion_4>
+                            <procedure_name>GTM_PROC250623_00_ON.prc</procedure_name>
+                        </time_line>
+                
+                        <time_line>
+                            <!-- 關閉 GTM -->
+                            <UTC>2025-06-23T00:30:01</UTC>
+                            <action>ADD</action>
+                            <duration>00:00:00.10</duration>
+                            <quaternion_1>NA</quaternion_1>
+                            <quaternion_2>NA</quaternion_2>
+                            <quaternion_3>NA</quaternion_3>
+                            <quaternion_4>NA</quaternion_4>
+                            <procedure_name>GTM_PROC250623_00_OFF.prc</procedure_name>
+                        </time_line>
+                
+            </body>
+        </GTM_Mission_Timeline>
+        

@@ -17,8 +17,8 @@ output_file_path = 'GTM_SDC_UI.py'
 
 ### read and write file ###
 
-with open(output_file_path, 'w') as f_out:
-    with open(input_file_path, 'r') as f_in:
+with open(output_file_path, 'w',encoding="utf-8") as f_out:
+    with open(input_file_path, 'r',encoding="utf-8") as f_in:
         
         line_in = f_in.readline()
         while line_in:
