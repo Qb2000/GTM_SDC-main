@@ -1,98 +1,167 @@
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-from GTM_SDC_specific_MTL import Ui_specific_MTL_window  
+from PyQt5.QtCore import Qt
+from GTM_SDC_specific_MLT import Ui_specific_MTL_window  
+from datetime import datetime, timedelta
+
+
 
 class SpecificMTLWindow(QtWidgets.QMainWindow):
     def __init__(self):
-    #     super().__init__()
-    #     self.ui = Ui_specific_MTL_window()
-    #     self.ui.setupUi(self)
-    #     self.setup_controller()
-    #     self.current_row = 0
+        super().__init__()
+        self.ui = Ui_specific_MTL_window()
+        self.ui.setupUi(self)
+        self.row_count = 0  # 因為 rowTemplateWidget 已經是第一個
+        self.setup()
 
-    # def setup_controller(self):
-
-    #     self.ui.Generate_specific_MTL.setEnabled(False)
-    #     self.ui.remove_row.setEnabled(False)
-        
-    #     self.ui.add_row.clicked.connect(self.add_row_function)
-        
-        super().__init__()  
-
-        self.setWindowTitle("Specific MTL")
-        self.resize(400, 600)
-
-        # 中央元件
-        central_widget = QtWidgets.QWidget(self)
-        self.setCentralWidget(central_widget)
-
-        # 整體垂直 layout
-        main_layout = QtWidgets.QVBoxLayout(central_widget)
-
-        # 加一個 groupbox 裡面放 row 區域
-        self.groupBox = QtWidgets.QGroupBox("orbit", self)
-        self.rows_layout = QtWidgets.QVBoxLayout(self.groupBox)
-        main_layout.addWidget(self.groupBox)
-
-        # 最下方 + 按鈕
-        self.add_row_btn = QtWidgets.QPushButton("＋ add new orbit")
-        main_layout.addWidget(self.add_row_btn)
-        self.add_row_btn.clicked.connect(self.add_row_function)
-        self.generate_btn = QtWidgets.QPushButton("Generate MTL")
-        main_layout.addWidget(self.generate_btn)
-        self.generate_btn.clicked.connect(self.generate_specific_mtl)
-
-        # 初始一列
+    def setup(self):
+        self.ui.Generate_specific_MTL.setEnabled(True)
+        self.ui.Generate_specific_MTL.clicked.connect(self.generate)
+        self.ui.verticalLayout.setAlignment(Qt.AlignTop)
+        self.ui.add_row.clicked.connect(self.add_row_function)
+        self.ui.remove_row.clicked.connect(self.remove_specific_row)
+        self.ui.remove_row.setEnabled(False)
+        self.ui.rowTemplateWidget.setVisible(False)  # 隱藏模板，不要顯示
         self.add_row_function()
 
-    def add_row_function(self, after_widget=None):
-        row_widget = QtWidgets.QWidget()
-        row_layout = QtWidgets.QHBoxLayout(row_widget)
-        row_layout.setContentsMargins(0, 0, 0, 0)
+    def add_row_function(self):
+        sender = self.sender()
+        # 新增一個 row（外層 QWidget + GridLayout）
+        new_row = QtWidgets.QWidget()
+        grid_layout = QtWidgets.QGridLayout(new_row)
+        grid_layout.setContentsMargins(0, 0, 0, 0)
 
-        # 編號 label（稍後會更新）
-        number_label = QtWidgets.QLabel("")
-
-        cb1 = QtWidgets.QCheckBox("SAA")
-        cb2 = QtWidgets.QCheckBox("Polar Region")
-        cb3 = QtWidgets.QCheckBox("Sunlit")
-        add_btn = QtWidgets.QPushButton("+")
-        remove_btn = QtWidgets.QPushButton("-")
-
-        row_layout.addWidget(number_label)
-        row_layout.addWidget(cb1)
-        row_layout.addWidget(cb2)
-        row_layout.addWidget(cb3)
-        row_layout.addWidget(add_btn)
-        row_layout.addWidget(remove_btn)
-
-        # 插入指定位置
-        if after_widget:
-            index = self.rows_layout.indexOf(after_widget)
-            self.rows_layout.insertWidget(index + 1, row_widget)
-        else:
-            self.rows_layout.addWidget(row_widget)
-
-        # 事件綁定
-        add_btn.clicked.connect(lambda: self.add_row_function(row_widget))
-        remove_btn.clicked.connect(lambda: self.remove_row(row_widget))
-
-        # 更新所有 row 編號
+        # 複製所有 widget（照順序）
+        def clone_label(origin):
+            new = QtWidgets.QLabel()
+            new.setText(origin.text())
+            return new
         
+        def clone_datetimeedit(origin):
+            new = QtWidgets.QDateTimeEdit()
+            new.setDateTime(origin.dateTime())
+            return new
+
+        def clone_checkbox(origin):
+            new = QtWidgets.QCheckBox()
+            new.setText(origin.text())
+            new.setChecked(origin.isChecked())
+            return new
+
+        def clone_button(origin, text):
+            new = QtWidgets.QPushButton(text)
+            new.setEnabled(origin.isEnabled())
+            return new
+
+        # 複製每個 widget（依照你的順序）
+        grid_layout.addWidget(clone_label(self.ui.label), 0, 0)
+        grid_layout.addWidget(clone_datetimeedit(self.ui.dateTimeEdit), 0, 1)
+        grid_layout.addWidget(clone_datetimeedit(self.ui.dateTimeEdit_2), 0, 2)
+        grid_layout.addWidget(clone_checkbox(self.ui.SAA_power_on), 0, 3)
+        grid_layout.addWidget(clone_checkbox(self.ui.polar_region_power_on), 0, 4)
+        grid_layout.addWidget(clone_checkbox(self.ui.Sunlit_power_on), 0, 5)
+
+        # 加、減按鈕
+        add_btn = clone_button(self.ui.add_row, "+")
+        remove_btn = clone_button(self.ui.remove_row, "-")
+        grid_layout.addWidget(add_btn, 0, 6)
+        grid_layout.addWidget(remove_btn, 0, 7)
+
+        # 按鈕連接功能（可動態控制）
+        add_btn.clicked.connect(self.add_row_function)
+        remove_btn.clicked.connect(lambda: self.remove_specific_row(new_row))
+        
+        
+        # 插入指定位置
+        if self.row_count > 0:
+            for i in range(self.ui.verticalLayout.count()):
+                item = self.ui.verticalLayout.itemAt(i).widget()
+                # print(i)
+                # print(sender)
+                # print(item)
+                # print(item.children()[0])
+                # print(item.children()[0].layout())
+
+                if item.children()[0].layout().itemAt(6).widget() == sender:
+                    index = item.children()[0].layout().itemAt(0).widget().text()[0]
+                    break
+            self.ui.verticalLayout.insertWidget(int(index)+1, new_row)
+        else:
+            self.ui.verticalLayout.addWidget(new_row)
+            
+        # for i in range(self.ui.verticalLayout.count()):    
+        #     item = self.ui.verticalLayout.itemAt(i).widget()
+        #     print(item.children()[0].layout().itemAt(0).widget())
+        #     print(item.children()[0].layout().itemAt(1).widget())
+        #     print(item.children()[0].layout().itemAt(2).widget())
+        #     print(item.children()[0].layout().itemAt(3).widget())
+        #     print(item.children()[0].layout().itemAt(4).widget())
+        #     print(item.children()[0].layout().itemAt(5).widget())
+        #     print(item.children()[0].layout().itemAt(6).widget())
+        #     print(item.children()[0].layout().itemAt(7).widget())
+            
+        # 把這一行加到 verticalLayout 裡
+        # self.ui.verticalLayout.addWidget(new_row)
+        self.row_count += 1
         self.update_row_numbers()
 
-    def remove_row(self, row_widget):
-        self.rows_layout.removeWidget(row_widget)
-        row_widget.setParent(None)
+    def remove_specific_row(self, row_widget):
+        # 從 layout 中移除 row，然後刪除
+        self.ui.verticalLayout.removeWidget(row_widget)
         row_widget.deleteLater()
+        self.row_count -= 1
         self.update_row_numbers()
-
+        if self.row_count == 1:
+           row_widget = self.ui.verticalLayout.itemAt(1).widget()
+           remove_botton = row_widget.children()[0].layout().itemAt(7).widget()
+           remove_botton.setEnabled(False)
+  
     def update_row_numbers(self):
-        for i in range(self.rows_layout.count()):
-            row_widget = self.rows_layout.itemAt(i).widget()
+        for i in range(1,self.ui.verticalLayout.count()):
+            row_widget = self.ui.verticalLayout.itemAt(i).widget()
             if row_widget:
-                row_layout = row_widget.layout()
-                number_label = row_layout.itemAt(0).widget()  # 第一個是 QLabel
-                number_label.setText(f"{i + 1}.")
-    def generate_specific_mtl(self):
-        print(1)
+                number_label = row_widget.children()[0].layout().itemAt(0).widget()
+                number_label.setText(f"{i}.")
+                remove_botton = row_widget.children()[0].layout().itemAt(7).widget()
+                if self.row_count > 1:
+                    remove_botton.setEnabled(True)             
+                 
+
+    def generate(self): #default generate
+        from GTM_SDC_UI_Controller_Mtl_Cmd import UiMtlCmd
+        self.gen = UiMtlCmd()
+        item = self.ui.verticalLayout.itemAt(1).widget()   
+        start_dt_widget = item.children()[0].layout().itemAt(1).widget()
+        self.gen.mtl_start_utc = start_dt_widget.dateTime().toPyDateTime()
+        
+        item = self.ui.verticalLayout.itemAt(self.ui.verticalLayout.count()-1).widget()
+        end_dt_widget = item.children()[0].layout().itemAt(2).widget()
+        self.gen.mtl_end_utc = end_dt_widget.dateTime().toPyDateTime()
+        print(self.gen.mtl_end_utc)
+        
+        
+        self.gen.mtl_on_off_minutes_group = []
+        
+        for i in range(1,self.ui.verticalLayout.count()):
+            item = self.ui.verticalLayout.itemAt(i).widget()
+            
+            start_dt_widget = item.children()[0].layout().itemAt(1).widget().dateTime().toPyDateTime()
+            end_dt_widget = item.children()[0].layout().itemAt(2).widget().dateTime().toPyDateTime()
+
+            self.ui.on_diff = start_dt_widget - self.gen.mtl_start_utc
+            self.ui.off_diff = end_dt_widget - self.gen.mtl_start_utc
+            self.gen.mtl_on_off_minutes_group.append([(self.ui.on_diff.total_seconds() / 60),(self.ui.off_diff.total_seconds() / 60)])
+            
+        print(self.gen.mtl_on_off_minutes_group)   
+        # self.mtl_start_utc.year = 2025
+        # self.mtl_start_utc.month = 6
+        # self.mtl_start_utc.day = 23
+        # self.mtl_start_utc.hour = 0
+        # self.mtl_start_utc.minute =  0
+        # self.mtl_start_utc.second = 1
+        self.gen.mtl_start_utc_2digit_year = datetime.strftime(self.gen.mtl_start_utc, '%y')
+        # self.gen.mtl_end_utc = self.gen.mtl_start_utc + timedelta(minutes=30)
+        # self.gen.mtl_on_off_minutes_group = [[0,30]]
+        self.gen.mtl_write_xml()
+
+        self.gen.cmd_write_on_xml()
+        self.gen.cmd_write_off_xml()

@@ -14,7 +14,7 @@ import numpy as np
 import sip
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFileDialog
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 import pyqtgraph as pg
 import pyqtgraph.exporters
 import warnings
@@ -183,7 +183,8 @@ class UiDecoder(object):
 
                 # Turn on relevant function and update it
                 self.ui.decoder_display_selection_group.setEnabled(True)
-                self.ui.decoder_lg_hg_together_group.setEnabled(True)
+                self.ui.combine_Hg_Lg.setEnabled(True)
+                self.ui.decoder_plot_sync_group.setEnabled(True)
                 self.decoder_display_selection()
                 
                 
@@ -195,7 +196,8 @@ class UiDecoder(object):
 
                 # Turn off relevant function and update it
                 self.ui.decoder_display_selection_group.setEnabled(False)
-                self.ui.decoder_lg_hg_together_group.setEnabled(False)
+                self.ui.combine_Hg_Lg.setEnabled(False)
+                self.ui.decoder_plot_sync_group.setEnabled(False)
                 self.decoder_display_selection()
 
         else:
@@ -208,7 +210,8 @@ class UiDecoder(object):
                 
                 # Turn off relevant function and update it
                 self.ui.decoder_display_selection_group.setEnabled(False)
-                self.ui.decoder_lg_hg_together_group.setEnabled(False)
+                self.ui.combine_Hg_Lg.setEnabled(False)
+                self.ui.decoder_plot_sync_group.setEnabled(False)
                 self.decoder_display_selection()
 
             else: # only in the beginning, important due to tmtc no need science_export
@@ -219,7 +222,8 @@ class UiDecoder(object):
                 
                 # Turn off relevant function and update it
                 self.ui.decoder_display_selection_group.setEnabled(False)
-                self.ui.decoder_lg_hg_together_group.setEnabled(False)
+                self.ui.combine_Hg_Lg.setEnabled(False)
+                self.ui.decoder_plot_sync_group.setEnabled(False)
                 self.decoder_display_selection()
 
     def decoder_display_selection(self):
@@ -238,7 +242,8 @@ class UiDecoder(object):
                 self.ui.decoder_display_selection_slave_s3_check_box.setEnabled(False)
                 self.ui.decoder_display_selection_slave_s4_check_box.setEnabled(False)
                 
-                self.ui.decoder_lg_hg_together_group.setEnabled(False)
+                self.ui.combine_Hg_Lg.setEnabled(False)
+                self.ui.decoder_plot_sync_group.setEnabled(False)
                 
                 if self.ui.decoder_display_selection_master_group.isChecked() or \
                 self.ui.decoder_display_selection_slave_group.isChecked():  # with any module checked
@@ -263,7 +268,8 @@ class UiDecoder(object):
                 self.ui.decoder_display_selection_slave_s3_check_box.setEnabled(True)
                 self.ui.decoder_display_selection_slave_s4_check_box.setEnabled(True)
                 
-                self.ui.decoder_lg_hg_together_group.setEnabled(True)
+                self.ui.combine_Hg_Lg.setEnabled(True)
+                self.ui.decoder_plot_sync_group.setEnabled(True)
             
                 if self.ui.decoder_display_selection_master_group.isChecked(): # display master
 
@@ -358,6 +364,10 @@ class UiDecoder(object):
         self.decoder_thread.decoder_thread_update_tmtc_signal.connect(self.decoder_update_plot_tmtc) 
         self.decoder_thread.decoder_thread_plot_update_science_hg_signal.connect(self.decoder_plot_science_robotic) 
         self.decoder_thread.decoder_thread_plot_update_science_lg_signal.connect(self.decoder_plot_science_robotic) 
+        self.decoder_thread.decoder_thread_plot_update_science_hg_lg_combine_signal.connect(self.decoder_plot_science_robotic)
+        self.decoder_thread.decoder_thread_plot_master_sync.connect(self.decoder_plot_sync_data) 
+        self.decoder_thread.decoder_thread_plot_slave_sync.connect(self.decoder_plot_sync_data) 
+        self.decoder_thread.decoder_thread_plot_light_curve.connect(self.decoder_plot_light_curve) 
         self.decoder_thread.decoder_thread_finish_signal.connect(self.decoder_close_all_figure_refresh)
 
         # Start threading
@@ -374,9 +384,32 @@ class UiDecoder(object):
         self.decoder_plot_open_window_list.append(self.decoder_plot_tmtc_pg_layout)
 
     def decoder_plot_open_window_science(self):
+        
+        # For sync plot data
+        if self.ui.decoder_plot_sync_on_check_box.isChecked():      
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_sync_master'] = pg.GraphicsLayoutWidget(title='Master_sync_data')
+            globals()['self.decoder_plot_sync_master'].resize(1200, 800)
+            globals()['self.decoder_plot_sync_master'].show()
+            globals()['self.decoder_plot_sync_master'].setBackground('w')
+            
+            globals()['self.decoder_plot_sync_slave'] = pg.GraphicsLayoutWidget(title='Slave_sync_data')
+            globals()['self.decoder_plot_sync_slave'].resize(1200, 800)
+            globals()['self.decoder_plot_sync_slave'].show()
+            globals()['self.decoder_plot_sync_slave'].setBackground('w')
+            
+            globals()['self.decoder_plot_light_curve'] = pg.GraphicsLayoutWidget(title='light_curve')
+            globals()['self.decoder_plot_light_curve'].resize(1200, 800)
+            globals()['self.decoder_plot_light_curve'].show()
+            globals()['self.decoder_plot_light_curve'].setBackground('w')
 
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_sync_master'])
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_sync_slave'])
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_light_curve'])
+        
         if self.ui.decoder_display_selection_master_group.isChecked() and \
-        not self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
+        not self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
         (self.ui.decoder_display_selection_master_s1_check_box.isChecked() or \
         self.ui.decoder_display_selection_master_s2_check_box.isChecked()): # M1 or M2
             
@@ -393,7 +426,7 @@ class UiDecoder(object):
             self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_master_b_lg'])
 
         if self.ui.decoder_display_selection_master_group.isChecked() and \
-        not self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
+        not self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
         (self.ui.decoder_display_selection_master_s3_check_box.isChecked() or \
         self.ui.decoder_display_selection_master_s4_check_box.isChecked()): # M3 or M4
 
@@ -410,7 +443,7 @@ class UiDecoder(object):
             self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_master_a_lg'])
 
         if self.ui.decoder_display_selection_slave_group.isChecked() and \
-        not self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
+        not self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
         (self.ui.decoder_display_selection_slave_s1_check_box.isChecked() or \
         self.ui.decoder_display_selection_slave_s2_check_box.isChecked()): # S1 or S2
 
@@ -427,7 +460,7 @@ class UiDecoder(object):
             self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_slave_b_lg'])
 
         if self.ui.decoder_display_selection_slave_group.isChecked() and \
-        not self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
+        not self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
         (self.ui.decoder_display_selection_slave_s3_check_box.isChecked() or \
         self.ui.decoder_display_selection_slave_s4_check_box.isChecked()): # S3 or S4
 
@@ -447,59 +480,105 @@ class UiDecoder(object):
         ######## plot_lg_hg_together ########
         
         if self.ui.decoder_display_selection_master_group.isChecked() and \
-        self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
-        (self.ui.decoder_display_selection_master_s1_check_box.isChecked() or \
-        self.ui.decoder_display_selection_master_s2_check_box.isChecked()): # M1 or M2
+        self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_master_s1_check_box.isChecked()): # M1
             
             # Create layout to hold multiple subplot
-            globals()['self.decoder_plot_science_pg_layout_master_b_together'] = pg.GraphicsLayoutWidget(title='Master CITIROC B together')
-            globals()['self.decoder_plot_science_pg_layout_master_b_together'].showMaximized()
-            globals()['self.decoder_plot_science_pg_layout_master_b_together'].setBackground('w')
+            globals()['self.decoder_plot_science_pg_layout_M1_combine'] = pg.GraphicsLayoutWidget(title='M1 combine_lg_hg')
+            globals()['self.decoder_plot_science_pg_layout_M1_combine'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_M1_combine'].setBackground('w')
 
             # Store layout for closing
-            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_master_b_together'])
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_M1_combine'])
 
         if self.ui.decoder_display_selection_master_group.isChecked() and \
-        self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
-        (self.ui.decoder_display_selection_master_s3_check_box.isChecked() or \
-        self.ui.decoder_display_selection_master_s4_check_box.isChecked()): # M3 or M4
+        self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_master_s2_check_box.isChecked()): # M2
+            
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_science_pg_layout_M2_combine'] = pg.GraphicsLayoutWidget(title='M2 combine_lg_hg')
+            globals()['self.decoder_plot_science_pg_layout_M2_combine'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_M2_combine'].setBackground('w')
+
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_M2_combine'])
+
+        if self.ui.decoder_display_selection_master_group.isChecked() and \
+        self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_master_s3_check_box.isChecked()): # M3
 
             # Create layout to hold multiple subplot
-            globals()['self.decoder_plot_science_pg_layout_master_a_together'] = pg.GraphicsLayoutWidget(title='Master CITIROC A together')
-            globals()['self.decoder_plot_science_pg_layout_master_a_together'].showMaximized()
-            globals()['self.decoder_plot_science_pg_layout_master_a_together'].setBackground('w')
+            globals()['self.decoder_plot_science_pg_layout_M3_combine'] = pg.GraphicsLayoutWidget(title='M3 combine_lg_hg')
+            globals()['self.decoder_plot_science_pg_layout_M3_combine'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_M3_combine'].setBackground('w')
 
 
             # Store layout for closing
-            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_master_a_together'])
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_M3_combine'])
+        
+        if self.ui.decoder_display_selection_master_group.isChecked() and \
+        self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_master_s4_check_box.isChecked()): # M4
+
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_science_pg_layout_M4_combine'] = pg.GraphicsLayoutWidget(title='M4 combine_lg_hg')
+            globals()['self.decoder_plot_science_pg_layout_M4_combine'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_M4_combine'].setBackground('w')
+
+
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_M4_combine'])
 
 
         if self.ui.decoder_display_selection_slave_group.isChecked() and \
-        self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
-        (self.ui.decoder_display_selection_slave_s1_check_box.isChecked() or \
-        self.ui.decoder_display_selection_slave_s2_check_box.isChecked()): # S1 or S2
+        self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_slave_s1_check_box.isChecked()): # S1
 
             # Create layout to hold multiple subplot
-            globals()['self.decoder_plot_science_pg_layout_slave_b_together'] = pg.GraphicsLayoutWidget(title='Slave CITIROC B together')
-            globals()['self.decoder_plot_science_pg_layout_slave_b_together'].showMaximized()
-            globals()['self.decoder_plot_science_pg_layout_slave_b_together'].setBackground('w')
+            globals()['self.decoder_plot_science_pg_layout_S1_combine'] = pg.GraphicsLayoutWidget(title='S1 combine_lg_hg')
+            globals()['self.decoder_plot_science_pg_layout_S1_combine'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_S1_combine'].setBackground('w')
 
 
             # Store layout for closing
-            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_slave_b_together'])
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_S1_combine'])
 
         if self.ui.decoder_display_selection_slave_group.isChecked() and \
-        self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
-        (self.ui.decoder_display_selection_slave_s3_check_box.isChecked() or \
-        self.ui.decoder_display_selection_slave_s4_check_box.isChecked()): # S3 or S4
+        self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_slave_s2_check_box.isChecked()): # S2
 
             # Create layout to hold multiple subplot
-            globals()['self.decoder_plot_science_pg_layout_slave_a_together'] = pg.GraphicsLayoutWidget(title='Slave CITIROC A together')
-            globals()['self.decoder_plot_science_pg_layout_slave_a_together'].showMaximized()
-            globals()['self.decoder_plot_science_pg_layout_slave_a_together'].setBackground('w')
+            globals()['self.decoder_plot_science_pg_layout_S2_combine'] = pg.GraphicsLayoutWidget(title='S2 combine_lg_hg')
+            globals()['self.decoder_plot_science_pg_layout_S2_combine'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_S2_combine'].setBackground('w')
+
 
             # Store layout for closing
-            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_slave_a_together'])
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_S2_combine'])
+
+        if self.ui.decoder_display_selection_slave_group.isChecked() and \
+        self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_slave_s3_check_box.isChecked()): # S3
+
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_science_pg_layout_S3_combine'] = pg.GraphicsLayoutWidget(title='S3 combine_lg_hg')
+            globals()['self.decoder_plot_science_pg_layout_S3_combine'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_S3_combine'].setBackground('w')
+
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_S3_combine'])
+
+        if self.ui.decoder_display_selection_slave_group.isChecked() and \
+        self.ui.combine_Hg_Lg_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_slave_s4_check_box.isChecked()): # S4
+
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_science_pg_layout_S4_combine'] = pg.GraphicsLayoutWidget(title='S4 combine_lg_hg')
+            globals()['self.decoder_plot_science_pg_layout_S4_combine'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_S4_combine'].setBackground('w')
+
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_S4_combine'])
     
     def decoder_clear_layout(self):
 
@@ -509,9 +588,16 @@ class UiDecoder(object):
 
     def decoder_cache_file_dirname_basename(self, file_list):
         
-        # Cache dirname and basename
+        # Cache dirname and basename for current file being processed
+        # print('from def:'+file_list[1])
         self.decoder_cached_input_file_dirname = file_list[0]
         self.decoder_cached_input_file_basename = file_list[1]
+        
+        # Store in a dictionary for multiple files if needed
+        if not hasattr(self, 'file_cache_dict'):
+            self.file_cache_dict = {}
+        self.file_cache_dict[file_list[1]] = {'dirname': file_list[0], 'basename': file_list[1]}
+        
     
     def decoder_cache_update_count(self, update_count):
         
@@ -626,14 +712,87 @@ class UiDecoder(object):
 
         else: # just display on screen
             pass
+    # plot light curve
+    def decoder_plot_light_curve(self, info_list):
+        
+        globals()['self.decoder_plot_light_curve_master_slave'] = globals()['self.decoder_plot_light_curve'].addPlot(title = f'{self.decoder_cached_input_file_basename}_light_curve')
+        globals()['self.decoder_plot_light_curve_master_slave'].addLegend(offset=(-10, -10))
+        globals()['self.decoder_plot_light_curve_master_slave'].plot(info_list[0],info_list[2],pen=pg.mkPen('#1f77b4', width=2), name='Master')
+        globals()['self.decoder_plot_light_curve_master_slave'].plot(info_list[1],info_list[3],pen=pg.mkPen('#ff7f0e', width=2), name='Slave')
+        
+        
+        globals()['self.decoder_plot_light_curve_master_slave'].setLabel('bottom', 'PPS') 
+        globals()['self.decoder_plot_light_curve_master_slave'].setLabel('left', 'Counts [#/PPS]')
+        globals()['self.decoder_plot_light_curve_master_slave'].getAxis('bottom').label.setFont(QtGui.QFont("Arial", 14))
+        globals()['self.decoder_plot_light_curve_master_slave'].getAxis('left').label.setFont(QtGui.QFont("Arial", 14))
+        globals()['self.decoder_plot_light_curve_master_slave'].getAxis('bottom').setHeight(50)
+        globals()['self.decoder_plot_light_curve_master_slave'].layout.setContentsMargins(10, 10, 10, 50) 
+        globals()['self.decoder_plot_light_curve_master_slave'].getAxis('left').setHeight(50)
+        globals()['self.decoder_plot_light_curve_master_slave'].layout.setContentsMargins(10, 10, 10, 50) 
+        
+        if self.ui.decoder_auto_save_figure_group.isEnabled() and \
+                self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
 
+                    exporter_light_curve = pg.exporters.ImageExporter(globals()['self.decoder_plot_light_curve_master_slave'].scene())
+
+                    exporter_light_curve.export(os.path.join(self.decoder_cached_input_file_dirname, 
+                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_light_curve.png'))
+    
+    #plot master sync data     
+    def decoder_plot_sync_data(self, info_list):
+        
+        y_label_list = ['sequence number','UTC Time [sec]','Temperature [℃]','PPS','X','Y','Z','Q1','Q2','Q3','Q4','Fine Time']
+        
+        if  info_list[0] == 'M':
+            
+            for i in range(2,len(info_list)):
+                globals()[f'self.decoder_plot_sync_master_{(i-2)%4}_{(i-2)//4}'] = globals()['self.decoder_plot_sync_master'].addPlot(row=(i-2)%4, 
+                                                                                                        col=(i-2)//4, 
+                                                                                                        title=f'{y_label_list[i-2]}')
+                globals()[f'self.decoder_plot_sync_master_{(i-2)%4}_{(i-2)//4}'].plot(info_list[1],info_list[i],pen=pg.mkPen('#1f77b4', width=2))
+                globals()[f'self.decoder_plot_sync_master_{(i-2)%4}_{(i-2)//4}'].setLabel('left', y_label_list[i-2])
+        else:
+            for i in range(2,len(info_list)):
+                globals()[f'self.decoder_plot_sync_slave_{(i-2)%4}_{(i-2)//4}'] = globals()['self.decoder_plot_sync_slave'].addPlot(row=(i-2)%4, 
+                                                                                                        col=(i-2)//4, 
+                                                                                                        title=f'{y_label_list[i-2]}')
+                globals()[f'self.decoder_plot_sync_slave_{(i-2)%4}_{(i-2)//4}'].plot(info_list[1],info_list[i],pen=pg.mkPen('#1f77b4', width=2))
+                globals()[f'self.decoder_plot_sync_slave_{(i-2)%4}_{(i-2)//4}'].setLabel('left', y_label_list[i-2])
+                
+                
+        if self.ui.decoder_auto_save_figure_group.isEnabled() and \
+                self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+
+                    exporter_light_curve = pg.exporters.ImageExporter(globals()['self.decoder_plot_sync_master'].scene())
+
+                    exporter_light_curve.export(os.path.join(self.decoder_cached_input_file_dirname, 
+                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_sync_master.png'))
+                    
+                    exporter_light_curve = pg.exporters.ImageExporter(globals()['self.decoder_plot_sync_slave'].scene())
+
+                    exporter_light_curve.export(os.path.join(self.decoder_cached_input_file_dirname, 
+                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_sync_slave.png'))
+    def decoder_plot_slave_sync_data(self, info_list):    
+        pass
     def decoder_plot_science_robotic(self, info_list):
+        
+        # Extract file info if provided (for combine mode)
+        if len(info_list) > 12 and info_list[0] == False:  # Display and save mode with file info
+            current_file_dirname = info_list[-2]
+            current_file_basename = info_list[-1]
+        elif len(info_list) > 14 and info_list[0] == True:  # Plot each channel mode with file info
+            current_file_dirname = info_list[-2]
+            current_file_basename = info_list[-1]
+        else:
+            # Fallback to cached values
+            current_file_dirname = self.decoder_cached_input_file_dirname
+            current_file_basename = self.decoder_cached_input_file_basename
         
         if info_list[0] == True: # plot each channel
 
             if info_list[1] == False: # first plotting
 
-                if info_list[8] == 1 and not self.ui.decoder_lg_hg_together_on_check_box.isChecked(): # hg
+                if info_list[8] == 1 and not self.ui.combine_Hg_Lg_on_check_box.isChecked(): # hg
 
                     # Add subplot
                     globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg_{info_list[5]}'] \
@@ -648,7 +807,7 @@ class UiDecoder(object):
                                                                                                                                     info_list[10], 
                                                                                                                                     pen=pg.mkPen(color=info_list[9], width=3))
 
-                if info_list[8] == 0 and not self.ui.decoder_lg_hg_together_on_check_box.isChecked(): # lg
+                if info_list[8] == 0 and not self.ui.combine_Hg_Lg_on_check_box.isChecked(): # lg
 
                     # Add subplot
                     globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg_{info_list[5]}'] \
@@ -663,41 +822,26 @@ class UiDecoder(object):
                         = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg_{info_list[5]}'].plot(info_list[11][:-1], 
                                                                                                                                     info_list[10], 
                                                                                                                                     pen=pg.mkPen(color=info_list[9], width=3))
-                if info_list[8] == 1 and self.ui.decoder_lg_hg_together_on_check_box.isChecked(): 
+                if self.ui.combine_Hg_Lg_on_check_box.isChecked(): 
                     with warnings.catch_warnings():
                         warnings.filterwarnings('ignore')
                         # Add subplot
-                        globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}'] \
-                        = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together'].addPlot(row=info_list[4][0], 
+                        globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine_{info_list[5]}'] \
+                        = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine'].addPlot(row=info_list[4][0], 
                                                                                                             col=info_list[4][1], 
                                                                                                             title=f'{info_list[7]}_channel_{info_list[5]}')
 
                         if info_list[-1] != False: # with data
 
                             # Plot
-                            globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}_line'] \
-                            = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}'].plot(info_list[11][:-1], 
+                            globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine_{info_list[5]}_line'] \
+                            = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine_{info_list[5]}'].plot(info_list[11][:-1], 
                                                                                                                                         info_list[10], 
-                                                                                                                                        pen=pg.mkPen(color=info_list[9], width=3))
-                    
-                if info_list[8] == 0 and self.ui.decoder_lg_hg_together_on_check_box.isChecked(): 
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings('ignore')
-                    # Add subplot
-                        globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}'] \
-                        = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together'].addPlot(row=info_list[4][0], 
-                                                                                                            col=info_list[4][1], 
-                                                                                                            title=f'{info_list[7]}_channel_{info_list[5]}')
-
-                        if info_list[-1] != False: # with data
-
-                            # Plot
-                            globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}_line'] \
-                            = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}'].plot(info_list[11][:-1], 
-                                                                                                                                        info_list[10], 
-                                                                                                                                        pen=pg.mkPen(color=info_list[9], width=3))
-                    
-                    
+                                                                                                                                        pen=pg.mkPen(color=info_list[9], width=3))    
+                            # print(f'from plot {info_list[8]}')
+                            hline = pg.InfiniteLine(pos=info_list[8], angle=90, pen=pg.mkPen('r', width=2, style=pg.QtCore.Qt.DashLine))
+                            globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine_{info_list[5]}'].addItem(hline)
+                            
             else: # update plotting
 
                 if info_list[8] == 1: # hg
@@ -716,66 +860,87 @@ class UiDecoder(object):
 
         else: # display and save
 
-            if info_list[1] == False and not self.ui.decoder_lg_hg_together_on_check_box.isChecked(): # first plotting
+            if self.ui.combine_Hg_Lg_on_check_box.isChecked():
+                # print(info_list)
+                if info_list[1] == False:
+                    # Show layout
+                    globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine'].show()
+                    # Keep the application responsive!
+                    QtWidgets.QApplication.processEvents()
 
-                # Show layout 
-                globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].show()
-                globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].show()
-                
+                    if self.ui.decoder_auto_save_figure_group.isEnabled() and \
+                    self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+                        
+                        # Save new layout
+                        exporter_combine = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine'].scene())
+                        # print(current_file_basename)
+                        exporter_combine.export(os.path.join(current_file_dirname, 
+                                                        f'{current_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_111combine.png'))
 
-                if self.ui.decoder_auto_save_figure_group.isEnabled() and \
-                self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+                    else:
+                        pass
+                else:
+
+                    # Show layout 
+                    globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine'].show()
+
+                    if self.ui.decoder_auto_save_figure_group.isEnabled() and \
+                    self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+                        
+                        # Save layout
+                        exporter_combine = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine'].scene())
+
+                        exporter_combine.export(os.path.join(current_file_dirname, 
+                                                        f'{current_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_combine_{self.decoder_update_counter}.png'))
+
+                    else: # just display on screen
+                        pass    
+            else:
+                if info_list[1] == False and not self.ui.combine_Hg_Lg_on_check_box.isChecked(): # first plotting
+
+                    # Show layout 
+                    globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].show()   
+                    globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].show()
                     
-                    # Save layout
-                    exporter_hg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].scene())
-                    exporter_lg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].scene())
-                    exporter_hg.export(os.path.join(self.decoder_cached_input_file_dirname, 
-                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg.png'))
-                    exporter_lg.export(os.path.join(self.decoder_cached_input_file_dirname, 
-                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg.png'))
 
-                else: # just display on screen
-                    pass
-            else: # update plotting
+                    if self.ui.decoder_auto_save_figure_group.isEnabled() and \
+                    self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+                        
+                        # Save layout
+                        exporter_hg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].scene())
+                        exporter_lg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].scene())
+                        exporter_hg.export(os.path.join(current_file_dirname, 
+                                                        f'{current_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg.png'))
+                        exporter_lg.export(os.path.join(current_file_dirname, 
+                                                        f'{current_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg.png'))
+
+                    else: # just display on screen
+                        pass
+
                 
-                # Show layout 
-                globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].show()
-                globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].show()
-
-                # Keep the application responsive!
-                QtWidgets.QApplication.processEvents()
-
-                if self.ui.decoder_auto_save_figure_group.isEnabled() and \
-                self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+                else: # update plotting
                     
-                    # Save new layout
-                    exporter_hg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].scene())
-                    exporter_lg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].scene())
-                    exporter_hg.export(os.path.join(self.decoder_cached_input_file_dirname, 
-                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg_{self.decoder_update_counter}.png'))
-                    exporter_lg.export(os.path.join(self.decoder_cached_input_file_dirname, 
-                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg_{self.decoder_update_counter}.png'))
+                    # Show layout 
+                    globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].show()
+                    globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].show()
 
-                else: # just display on screen
-                    pass    
-            if info_list[1] == False and self.ui.decoder_lg_hg_together_on_check_box.isChecked(): # first plotting
+                    # Keep the application responsive!
+                    QtWidgets.QApplication.processEvents()
 
-                # Show layout 
-                globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together'].show()
-                
-                
+                    if self.ui.decoder_auto_save_figure_group.isEnabled() and \
+                    self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+                        
+                        # Save new layout
+                        exporter_hg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].scene())
+                        exporter_lg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].scene())
+                        exporter_hg.export(os.path.join(current_file_dirname, 
+                                                        f'{current_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg_{self.decoder_update_counter}.png'))
+                        exporter_lg.export(os.path.join(current_file_dirname, 
+                                                        f'{current_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg_{self.decoder_update_counter}.png'))
 
-                if self.ui.decoder_auto_save_figure_group.isEnabled() and \
-                self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
-                    
-                    # Save layout
-                    exporter_hg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together'].scene())
+                    else: # just display on screen
+                        pass    
 
-                    exporter_hg.export(os.path.join(self.decoder_cached_input_file_dirname, 
-                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together.png'))
-
-                else: # just display on screen
-                    pass
             
             
             

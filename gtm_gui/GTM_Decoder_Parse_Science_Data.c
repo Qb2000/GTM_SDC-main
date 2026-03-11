@@ -92,7 +92,9 @@ int parse_science_data(int input_file_pointer, char *input_file_path) {
             // check science spacewire rmap head
             if (science_1279_byte_buffer_counter == SPACEWIRE_RMAP_HEAD_SIZE) {
                 if (!is_science_icd_spacewire_rmap_head(science_1279_byte_buffer)) { 
+
                     log_error("Please check science spacewire rmap head defined by ICD!");
+
                 }
             }
 
@@ -145,6 +147,7 @@ int parse_science_data(int input_file_pointer, char *input_file_path) {
         // check 1110 bytes science head
         if (science_1110_byte_buffer_counter == 2) {
             if (!is_science_icd_head(scienc_1110_byte_buffer)) { 
+                printf("%d\n",i);
                 log_error("Please check science head defined by ICD!");
             }
         }

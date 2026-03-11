@@ -81,14 +81,15 @@ conda activate env_gtm
 conda install anaconda::numpy -y
 conda install anaconda::pandas -y
 conda install conda-forge::matplotlib -y
-conda install anaconda::pyqt –y
+conda install anaconda::pyqt -y
 conda install conda-forge::pyqtgraph -y
 conda install anaconda::scipy -y
 conda install anaconda::scikit-learn -y
 conda install anaconda::astropy -y
-conda install conda-forge::skyfield –y(Linux should use "pip install skyfield”!)
+conda install conda-forge::skyfield -y
+(Linux should use "pip install skyfield”!)
 conda install esri::pyquaternion -y
-conda install conda-forge::shapely –y
+conda install conda-forge::shapely -y
 
 python GTM_SDC_Start.py
 ```
