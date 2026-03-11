@@ -875,7 +875,7 @@ class UiDecoder(object):
                         exporter_combine = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_combine'].scene())
                         # print(current_file_basename)
                         exporter_combine.export(os.path.join(current_file_dirname, 
-                                                        f'{current_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_111combine.png'))
+                                                        f'{current_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_combine.png'))
 
                     else:
                         pass
