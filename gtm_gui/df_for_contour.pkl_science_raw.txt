@@ -1,0 +1,18 @@
+================================================================================
+packet: gtm_id; previous_crc8; sequence_count
+sync         : gtm_id; pps_counts; cmd_sequence_number
+sync      utc: day_of_year; hour; minute; second; subsecond
+sync attitude: x; y; z; q_1; q_2; q_3; q_4; T 
+event time: buffer_id; fine_time_counter
+event  adc: hit_flag; gtm_id; citiroc_id; channel_id; gain; adc_value
+unknow 3 bytes: gtm_id
+================================================================================
+================================================================================
+packet: gtm_id; previous_crc8; sequence_count
+sync         : gtm_id; pps_counts; cmd_sequence_number
+sync      utc: day_of_year; hour; minute; second; subsecond
+sync attitude: x; y; z; q_1; q_2; q_3; q_4; T 
+event time: buffer_id; fine_time_counter
+event  adc: hit_flag; gtm_id; citiroc_id; channel_id; gain; adc_value
+unknow 3 bytes: gtm_id
+================================================================================

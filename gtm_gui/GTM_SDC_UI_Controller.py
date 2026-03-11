@@ -27,7 +27,7 @@ class MainWindowController(QtWidgets.QMainWindow, UiFlow, UiMtlCmd, UiDecoder, U
         # Import Ui_MainWindow
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
+        self.ui_specific_MTL_window = None
         # Run Backend
         self.setup_controller()
 
@@ -93,7 +93,12 @@ class MainWindowController(QtWidgets.QMainWindow, UiFlow, UiMtlCmd, UiDecoder, U
         self.ui.mtl_hours_line.textChanged.connect(self.mtl_conditions)
         self.ui.mtl_minutes_radio_button.clicked.connect(self.mtl_conditions)
         self.ui.mtl_minutes_line.textChanged.connect(self.mtl_conditions)
-
+        
+        
+        # Specific MTL
+        self.ui.mtl_specific_MTL.setEnabled(False)
+        self.ui.mtl_specific_MTL.clicked.connect(self.specific_MTL_window)
+        
         # SAA threshold
         self.ui.mtl_saa_check_box.clicked.connect(self.mtl_conditions)
         self.ui.mtl_saa_line.textChanged.connect(self.mtl_conditions)
@@ -140,6 +145,10 @@ class MainWindowController(QtWidgets.QMainWindow, UiFlow, UiMtlCmd, UiDecoder, U
         # Real-time display
         self.ui.decoder_real_time_display_group.setEnabled(False)
         self.ui.decoder_real_time_display_on_check_box.clicked.connect(self.decoder_real_time_display)
+        
+        # lg_hg_together display
+        self.ui.decoder_lg_hg_together_group.setEnabled(False)
+        self.ui.decoder_lg_hg_together_on_check_box.clicked.connect(self.decoder_display_selection)
 
         # Auto-save figure
         self.ui.decoder_auto_save_figure_group.setEnabled(False)

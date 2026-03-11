@@ -11,12 +11,15 @@ Created on Mon Jun 27 14:58:23 2022
 import os
 import sys
 import numpy as np
-
+import sip
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFileDialog
-
+from PyQt5 import QtWidgets
 import pyqtgraph as pg
 import pyqtgraph.exporters
+import warnings
+
+
 
 from GTM_SDC_UI_Controller_Decoder_Thread import UiDecoderThread
 
@@ -180,7 +183,9 @@ class UiDecoder(object):
 
                 # Turn on relevant function and update it
                 self.ui.decoder_display_selection_group.setEnabled(True)
+                self.ui.decoder_lg_hg_together_group.setEnabled(True)
                 self.decoder_display_selection()
+                
                 
             else: # without real-time display
 
@@ -190,6 +195,7 @@ class UiDecoder(object):
 
                 # Turn off relevant function and update it
                 self.ui.decoder_display_selection_group.setEnabled(False)
+                self.ui.decoder_lg_hg_together_group.setEnabled(False)
                 self.decoder_display_selection()
 
         else:
@@ -202,6 +208,7 @@ class UiDecoder(object):
                 
                 # Turn off relevant function and update it
                 self.ui.decoder_display_selection_group.setEnabled(False)
+                self.ui.decoder_lg_hg_together_group.setEnabled(False)
                 self.decoder_display_selection()
 
             else: # only in the beginning, important due to tmtc no need science_export
@@ -212,6 +219,7 @@ class UiDecoder(object):
                 
                 # Turn off relevant function and update it
                 self.ui.decoder_display_selection_group.setEnabled(False)
+                self.ui.decoder_lg_hg_together_group.setEnabled(False)
                 self.decoder_display_selection()
 
     def decoder_display_selection(self):
@@ -229,7 +237,9 @@ class UiDecoder(object):
                 self.ui.decoder_display_selection_slave_s2_check_box.setEnabled(False)
                 self.ui.decoder_display_selection_slave_s3_check_box.setEnabled(False)
                 self.ui.decoder_display_selection_slave_s4_check_box.setEnabled(False)
-
+                
+                self.ui.decoder_lg_hg_together_group.setEnabled(False)
+                
                 if self.ui.decoder_display_selection_master_group.isChecked() or \
                 self.ui.decoder_display_selection_slave_group.isChecked():  # with any module checked
 
@@ -252,6 +262,8 @@ class UiDecoder(object):
                 self.ui.decoder_display_selection_slave_s2_check_box.setEnabled(True)
                 self.ui.decoder_display_selection_slave_s3_check_box.setEnabled(True)
                 self.ui.decoder_display_selection_slave_s4_check_box.setEnabled(True)
+                
+                self.ui.decoder_lg_hg_together_group.setEnabled(True)
             
                 if self.ui.decoder_display_selection_master_group.isChecked(): # display master
 
@@ -364,9 +376,10 @@ class UiDecoder(object):
     def decoder_plot_open_window_science(self):
 
         if self.ui.decoder_display_selection_master_group.isChecked() and \
+        not self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
         (self.ui.decoder_display_selection_master_s1_check_box.isChecked() or \
         self.ui.decoder_display_selection_master_s2_check_box.isChecked()): # M1 or M2
-
+            
             # Create layout to hold multiple subplot
             globals()['self.decoder_plot_science_pg_layout_master_b_hg'] = pg.GraphicsLayoutWidget(title='Master CITIROC B HG')
             globals()['self.decoder_plot_science_pg_layout_master_b_hg'].showMaximized()
@@ -380,6 +393,7 @@ class UiDecoder(object):
             self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_master_b_lg'])
 
         if self.ui.decoder_display_selection_master_group.isChecked() and \
+        not self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
         (self.ui.decoder_display_selection_master_s3_check_box.isChecked() or \
         self.ui.decoder_display_selection_master_s4_check_box.isChecked()): # M3 or M4
 
@@ -396,6 +410,7 @@ class UiDecoder(object):
             self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_master_a_lg'])
 
         if self.ui.decoder_display_selection_slave_group.isChecked() and \
+        not self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
         (self.ui.decoder_display_selection_slave_s1_check_box.isChecked() or \
         self.ui.decoder_display_selection_slave_s2_check_box.isChecked()): # S1 or S2
 
@@ -412,6 +427,7 @@ class UiDecoder(object):
             self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_slave_b_lg'])
 
         if self.ui.decoder_display_selection_slave_group.isChecked() and \
+        not self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
         (self.ui.decoder_display_selection_slave_s3_check_box.isChecked() or \
         self.ui.decoder_display_selection_slave_s4_check_box.isChecked()): # S3 or S4
 
@@ -426,6 +442,64 @@ class UiDecoder(object):
             # Store layout for closing
             self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_slave_a_hg'])
             self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_slave_a_lg'])
+        
+        
+        ######## plot_lg_hg_together ########
+        
+        if self.ui.decoder_display_selection_master_group.isChecked() and \
+        self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_master_s1_check_box.isChecked() or \
+        self.ui.decoder_display_selection_master_s2_check_box.isChecked()): # M1 or M2
+            
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_science_pg_layout_master_b_together'] = pg.GraphicsLayoutWidget(title='Master CITIROC B together')
+            globals()['self.decoder_plot_science_pg_layout_master_b_together'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_master_b_together'].setBackground('w')
+
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_master_b_together'])
+
+        if self.ui.decoder_display_selection_master_group.isChecked() and \
+        self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_master_s3_check_box.isChecked() or \
+        self.ui.decoder_display_selection_master_s4_check_box.isChecked()): # M3 or M4
+
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_science_pg_layout_master_a_together'] = pg.GraphicsLayoutWidget(title='Master CITIROC A together')
+            globals()['self.decoder_plot_science_pg_layout_master_a_together'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_master_a_together'].setBackground('w')
+
+
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_master_a_together'])
+
+
+        if self.ui.decoder_display_selection_slave_group.isChecked() and \
+        self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_slave_s1_check_box.isChecked() or \
+        self.ui.decoder_display_selection_slave_s2_check_box.isChecked()): # S1 or S2
+
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_science_pg_layout_slave_b_together'] = pg.GraphicsLayoutWidget(title='Slave CITIROC B together')
+            globals()['self.decoder_plot_science_pg_layout_slave_b_together'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_slave_b_together'].setBackground('w')
+
+
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_slave_b_together'])
+
+        if self.ui.decoder_display_selection_slave_group.isChecked() and \
+        self.ui.decoder_lg_hg_together_on_check_box.isChecked() and \
+        (self.ui.decoder_display_selection_slave_s3_check_box.isChecked() or \
+        self.ui.decoder_display_selection_slave_s4_check_box.isChecked()): # S3 or S4
+
+            # Create layout to hold multiple subplot
+            globals()['self.decoder_plot_science_pg_layout_slave_a_together'] = pg.GraphicsLayoutWidget(title='Slave CITIROC A together')
+            globals()['self.decoder_plot_science_pg_layout_slave_a_together'].showMaximized()
+            globals()['self.decoder_plot_science_pg_layout_slave_a_together'].setBackground('w')
+
+            # Store layout for closing
+            self.decoder_plot_open_window_list.append(globals()['self.decoder_plot_science_pg_layout_slave_a_together'])
     
     def decoder_clear_layout(self):
 
@@ -559,7 +633,7 @@ class UiDecoder(object):
 
             if info_list[1] == False: # first plotting
 
-                if info_list[8] == 1: # hg
+                if info_list[8] == 1 and not self.ui.decoder_lg_hg_together_on_check_box.isChecked(): # hg
 
                     # Add subplot
                     globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg_{info_list[5]}'] \
@@ -574,7 +648,7 @@ class UiDecoder(object):
                                                                                                                                     info_list[10], 
                                                                                                                                     pen=pg.mkPen(color=info_list[9], width=3))
 
-                if info_list[8] == 0: # lg
+                if info_list[8] == 0 and not self.ui.decoder_lg_hg_together_on_check_box.isChecked(): # lg
 
                     # Add subplot
                     globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg_{info_list[5]}'] \
@@ -589,7 +663,41 @@ class UiDecoder(object):
                         = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg_{info_list[5]}'].plot(info_list[11][:-1], 
                                                                                                                                     info_list[10], 
                                                                                                                                     pen=pg.mkPen(color=info_list[9], width=3))
+                if info_list[8] == 1 and self.ui.decoder_lg_hg_together_on_check_box.isChecked(): 
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore')
+                        # Add subplot
+                        globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}'] \
+                        = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together'].addPlot(row=info_list[4][0], 
+                                                                                                            col=info_list[4][1], 
+                                                                                                            title=f'{info_list[7]}_channel_{info_list[5]}')
 
+                        if info_list[-1] != False: # with data
+
+                            # Plot
+                            globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}_line'] \
+                            = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}'].plot(info_list[11][:-1], 
+                                                                                                                                        info_list[10], 
+                                                                                                                                        pen=pg.mkPen(color=info_list[9], width=3))
+                    
+                if info_list[8] == 0 and self.ui.decoder_lg_hg_together_on_check_box.isChecked(): 
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore')
+                    # Add subplot
+                        globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}'] \
+                        = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together'].addPlot(row=info_list[4][0], 
+                                                                                                            col=info_list[4][1], 
+                                                                                                            title=f'{info_list[7]}_channel_{info_list[5]}')
+
+                        if info_list[-1] != False: # with data
+
+                            # Plot
+                            globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}_line'] \
+                            = globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together_{info_list[5]}'].plot(info_list[11][:-1], 
+                                                                                                                                        info_list[10], 
+                                                                                                                                        pen=pg.mkPen(color=info_list[9], width=3))
+                    
+                    
             else: # update plotting
 
                 if info_list[8] == 1: # hg
@@ -608,11 +716,12 @@ class UiDecoder(object):
 
         else: # display and save
 
-            if info_list[1] == False: # first plotting
+            if info_list[1] == False and not self.ui.decoder_lg_hg_together_on_check_box.isChecked(): # first plotting
 
                 # Show layout 
                 globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_hg'].show()
                 globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg'].show()
+                
 
                 if self.ui.decoder_auto_save_figure_group.isEnabled() and \
                 self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
@@ -627,7 +736,6 @@ class UiDecoder(object):
 
                 else: # just display on screen
                     pass
-            
             else: # update plotting
                 
                 # Show layout 
@@ -649,11 +757,55 @@ class UiDecoder(object):
                                                     f'{self.decoder_cached_input_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_lg_{self.decoder_update_counter}.png'))
 
                 else: # just display on screen
+                    pass    
+            if info_list[1] == False and self.ui.decoder_lg_hg_together_on_check_box.isChecked(): # first plotting
+
+                # Show layout 
+                globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together'].show()
+                
+                
+
+                if self.ui.decoder_auto_save_figure_group.isEnabled() and \
+                self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+                    
+                    # Save layout
+                    exporter_hg = pg.exporters.ImageExporter(globals()[f'self.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together'].scene())
+
+                    exporter_hg.export(os.path.join(self.decoder_cached_input_file_dirname, 
+                                                    f'{self.decoder_cached_input_file_basename}.decoder_plot_science_pg_layout_{info_list[2]}_{info_list[3]}_together.png'))
+
+                else: # just display on screen
                     pass
+            
+            
+            
 
     ### decoder_start_end ###
 
     ### decoder_close_all_figure ###
+    def clear_and_close_all_pyqtgraph_layouts(self):
+        app = QtWidgets.QApplication.instance()
+        if app is None:
+            return
+        
+        for widget in app.topLevelWidgets():
+            self.walk_widgets_and_clear(widget)
+
+    def walk_widgets_and_clear(self, widget):
+        if sip.isdeleted(widget):
+            return
+
+        if isinstance(widget, (pg.GraphicsLayoutWidget, pg.PlotWidget)):
+            try:
+                widget.clear()
+                widget.close()
+            except Exception as e:
+                print(f"Error clearing or closing {widget}: {e}")
+
+        for child in widget.findChildren(QtWidgets.QWidget):
+            self.walk_widgets_and_clear(child)
+            
+    
 
     def decoder_close_all_figure_refresh(self):
         
@@ -666,14 +818,15 @@ class UiDecoder(object):
 
             # Turn on relevant function
             self.ui.decoder_close_all_figure_button.setEnabled(True)
-
+    
     def decoder_close_all_figure(self):
-
-        # Run all opened layout
-        for decoder_plot_open_window_science in self.decoder_plot_open_window_list:
-            decoder_plot_open_window_science.clear()
-            decoder_plot_open_window_science.close()
-        
+        print(self.decoder_plot_open_window_list)
+        try:# Run all opened layout
+            for decoder_plot_open_window_science in self.decoder_plot_open_window_list:
+                decoder_plot_open_window_science.clear()
+                decoder_plot_open_window_science.close()
+        except:
+            self.clear_and_close_all_pyqtgraph_layouts()
         # Initialize layout list
         self.decoder_plot_open_window_list = []
         
