@@ -44,10 +44,10 @@ class UiMtlCmd(object):
             self.ui.mtl_conditions_group.setEnabled(True)
             self.mtl_conditions()
 
-    # def specific_MTL_window(self):   
-    #     if self.ui_specific_MTL_window is None:
-    #         self.ui_specific_MTL_window = SpecificMTLWindow()
-    #     self.ui_specific_MTL_window.show()
+    def specific_MTL_window(self):   
+        if self.ui_specific_MTL_window is None:
+            self.ui_specific_MTL_window = SpecificMTLWindow()
+        self.ui_specific_MTL_window.show()
     
     def mtl_conditions(self):
 
@@ -172,23 +172,23 @@ class UiMtlCmd(object):
 
         self.ui.cmd_generate_button.setEnabled(True)
     
-    def specific_MTL_window(self): #default generate
-        if self.start_time_flag == 1:
-            self.mtl_start_utc = datetime.utcnow()
-        if self.start_time_flag == 2:
-            self.mtl_start_utc = datetime.strptime(self.assign_utc, '%Y-%m-%d %H:%M:%S')
-        # self.mtl_start_utc.year = 2025
-        # self.mtl_start_utc.month = 6
-        # self.mtl_start_utc.day = 23
-        # self.mtl_start_utc.hour = 0
-        # self.mtl_start_utc.minute =  0
-        # self.mtl_start_utc.second = 1
-        self.mtl_start_utc_2digit_year = datetime.strftime(self.mtl_start_utc, '%y')
-        self.mtl_end_utc = self.mtl_start_utc + timedelta(minutes=30)
-        self.mtl_on_off_minutes_group = [[0,30]]
-        self.mtl_write_xml()
+    # def specific_MTL_window(self): #default generate
+    #     if self.start_time_flag == 1:
+    #         self.mtl_start_utc = datetime.utcnow()
+    #     if self.start_time_flag == 2:
+    #         self.mtl_start_utc = datetime.strptime(self.assign_utc, '%Y-%m-%d %H:%M:%S')
+    #     # self.mtl_start_utc.year = 2025
+    #     # self.mtl_start_utc.month = 6
+    #     # self.mtl_start_utc.day = 23
+    #     # self.mtl_start_utc.hour = 0
+    #     # self.mtl_start_utc.minute =  0
+    #     # self.mtl_start_utc.second = 1
+    #     self.mtl_start_utc_2digit_year = datetime.strftime(self.mtl_start_utc, '%y')
+    #     self.mtl_end_utc = self.mtl_start_utc + timedelta(minutes=30)
+    #     self.mtl_on_off_minutes_group = [[0,30]]
+    #     self.mtl_write_xml()
 
-        self.ui.cmd_generate_button.setEnabled(True)
+    #     self.ui.cmd_generate_button.setEnabled(True)
         
     
     def mtl_write_xml(self):
@@ -398,7 +398,7 @@ class UiMtlCmd(object):
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x00 0x00 0x00 0x00 0x62 0x62 0x00 0x00 \\ 
-                            0x00 0x00 0x00 0xA8 0x00 0x5C 0xFB 0xF2 
+                            0x00 0x00 0x00 0xA4 0x00 0x5C 0xFB 0xF2 
                         </command>
                         <src>MPQ</src>
                     </procedure>
@@ -414,12 +414,12 @@ class UiMtlCmd(object):
                             0xFF 0xFF 0xFF 0x22 0x79 0xA9 0x71 0xF9 0xE9 0xC9 \\ 
                             0x49 0xC9 0xE9 0x99 0x05 0x49 0x31 0x19 0xA9 0x9E \\ 
                             0x91 0xD1 0x69 0x39 0x31 0x39 0x09 0xE1 0x71 0x51 \\ 
-                            0xE1 0x11 0x11 0x09 0x91 0xE1 0xFF 0xFF 0xFF 0xFF \\ 
+                            0xE1 0x11 0x11 0x09 0x0A 0xE1 0xFF 0xFF 0xFF 0xFF \\    
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x00 0x00 0x00 0x00 0x62 0x62 0x00 0x00 \\ 
-                            0x00 0x00 0x00 0xA9 0x00 0xA0 0xFB 0xF2 
+                            0x00 0x00 0x00 0xA5 0x00 0xA0 0xFB 0xF2 
                         </command>
                         <src>MPQ</src>
                     </procedure>
@@ -440,7 +440,7 @@ class UiMtlCmd(object):
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x00 0x00 0x00 0x00 0x62 0x62 0x00 0x00 \\ 
-                            0x00 0x00 0x00 0xB1 0x00 0xED 0xFB 0xF2 
+                            0x00 0x00 0x00 0xAD 0x00 0xED 0xFB 0xF2 
                         </command>
                         <src>MPQ</src>
                     </procedure>
@@ -461,7 +461,7 @@ class UiMtlCmd(object):
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 \\ 
                             0x11 0x11 0x00 0x00 0x00 0x00 0x62 0x62 0x00 0x00 \\ 
-                            0x00 0x00 0x00 0xAD 0x00 0x7E 0xFB 0xF2 
+                            0x00 0x00 0x00 0xA9 0x00 0x7E 0xFB 0xF2 
                         </command>
                         <src>MPQ</src>
                     </procedure>

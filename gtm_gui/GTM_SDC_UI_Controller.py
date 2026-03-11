@@ -147,8 +147,12 @@ class MainWindowController(QtWidgets.QMainWindow, UiFlow, UiMtlCmd, UiDecoder, U
         self.ui.decoder_real_time_display_on_check_box.clicked.connect(self.decoder_real_time_display)
         
         # lg_hg_together display
-        self.ui.decoder_lg_hg_together_group.setEnabled(False)
-        self.ui.decoder_lg_hg_together_on_check_box.clicked.connect(self.decoder_display_selection)
+        self.ui.combine_Hg_Lg.setEnabled(False)
+        self.ui.combine_Hg_Lg_on_check_box.clicked.connect(self.decoder_display_selection)
+        
+        # plot sync data display
+        self.ui.decoder_plot_sync_group.setEnabled(False)
+        self.ui.decoder_plot_sync_on_check_box.clicked.connect(self.decoder_display_selection)
 
         # Auto-save figure
         self.ui.decoder_auto_save_figure_group.setEnabled(False)
