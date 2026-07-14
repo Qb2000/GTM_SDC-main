@@ -66,6 +66,25 @@ class UiLocalizer(object):
             self.ui.find_preview_lc_button.setEnabled(False)
             self.ui.find_search_grb_button.setEnabled(False)
             
+    def find_get_threshold_p_value(self):
+        
+        # Get threshold p-value from UI
+        threshold_p_value_text = self.ui.Threshold_P_Value_line.text()
+        
+        try:
+            threshold_p_value = float(threshold_p_value_text)
+        except ValueError:
+            threshold_p_value = 0.001
+            self.ui.Threshold_P_Value_line.setText(str(threshold_p_value))
+            print('Invalid threshold p-value. Use default value 0.001.')
+            
+        if not (0 < threshold_p_value < 1):
+            threshold_p_value = 0.001
+            self.ui.Threshold_P_Value_line.setText(str(threshold_p_value))
+            print('Threshold p-value should be between 0 and 1. Use default value 0.001.')
+            
+        return threshold_p_value
+            
     def localize_input_file(self):
 
         # Get input file
@@ -151,6 +170,9 @@ class UiLocalizer(object):
     def find_search(self):
 
         plt.style.use('default')
+        
+        self.threshold_p_value = self.find_get_threshold_p_value()
+        print(f'Threshold p-value: {self.threshold_p_value}')
 
         if self.ui.find_slice_time_group.isChecked():
             self.find_df_temp = csv2df(self.find_cached_input_file)
@@ -162,10 +184,11 @@ class UiLocalizer(object):
         self.find_df_list, self.find_df_name_list = split_df(self.find_df)
 
         # Find trigger and report trigger & end time
-        self.trigger_time, self.end_time = \
+        self.trigger_time, self.end_time, self.best_bin_size = \
         find_trigger(os.path.basename(self.find_cached_input_file),
                      self.find_df, self.find_df_list, self.find_df_name_list, 
                      bin_size_list=[0.001, 0.002, 0.005 ,0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
+                     threshold_p_value=self.threshold_p_value,
                      ) 
 
         if self.trigger_time != None:
@@ -175,8 +198,9 @@ class UiLocalizer(object):
             find_time_info(os.path.basename(self.find_cached_input_file),
                            self.find_df_list, self.find_df_name_list,
                            self.trigger_time, self.end_time,
-                           best_bin_size=1, 
+                           best_bin_size=self.best_bin_size, 
                            best_case_name='Slave',
+                           threshold_p_value=self.threshold_p_value,
                            )
             
             df_output = report_trigger_info(os.path.basename(self.find_cached_input_file),
@@ -184,7 +208,7 @@ class UiLocalizer(object):
                                             self.trigger_time, data_with_grb_start_time, data_with_grb_end_time,
                                             t05, t25, t75, t95, t50, t90,
                                             best_bin_edges,
-                                            best_bin_size=1,
+                                            best_bin_size=self.best_bin_size,
                                             )
             print('==============================')
             print('Can start to localize GRB!')
@@ -196,5 +220,3 @@ class UiLocalizer(object):
         localize_grb(self.localize_cached_input_file)
     
     ### localizer_run_end ###
-
-

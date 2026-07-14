@@ -71,7 +71,7 @@ def split_df(df):
     
     return df_list, df_name_list
 
-def find_trigger(file_name, df, df_list, df_name_list, bin_size_list):
+def find_trigger(file_name, df, df_list, df_name_list, bin_size_list, threshold_p_value=0.001):
 
     # Define data start & end time
     data_start_time = np.min(df['Relative Time'])
@@ -80,6 +80,7 @@ def find_trigger(file_name, df, df_list, df_name_list, bin_size_list):
     # Create empty list to store all possible trigger & end time
     trigger_time_list = []
     end_time_list = []
+    trigger_bin_size_list = []
 
     for shift_flag in range(2): # with or without shift
         
@@ -115,39 +116,80 @@ def find_trigger(file_name, df, df_list, df_name_list, bin_size_list):
                 
                 if np.mean(hist) > 3:
                     background = fit_bkg(bin_edges[:-1], hist, bin_edges[:-1])
-                    threshold = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background))
+                    threshold = np.nan_to_num(poisson.ppf(1 - threshold_p_value/bin_number, background))
                 else:
                     background = np.ones(len(hist)) * np.mean(hist)
-                    threshold = poisson.ppf(1 - 0.001/bin_number, background)
+                    threshold = poisson.ppf(1 - threshold_p_value/bin_number, background)
                     
-                trigger_time_index = np.argwhere(hist > threshold)
-                hist2 = np.delete(hist,trigger_time_index)
-                bin_edges2 = np.delete(bin_edges[:-1], trigger_time_index)
+                # Old version: only exclude bins higher than threshold
+                # trigger_time_index = np.argwhere(hist > threshold)
+                # hist2 = np.delete(hist,trigger_time_index)
+                # bin_edges2 = np.delete(bin_edges[:-1], trigger_time_index)
+                # 
+                # exclude_times=1
+                # while len(trigger_time_index)>0:
+                #     
+                #     # print(f'len of bin_edges2: {len(bin_edges2[:-1])}')
+                #     # print(f'len of hist2: {len(hist2)}')
+                #     # print(marker_1)
+                #     exclude_times+=1
+                #     
+                #     if np.mean(hist2) > 3:
+                #         background = fit_bkg(bin_edges2, hist2, bin_edges[:-1])
+                #         threshold = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background))
+                #         background2 = fit_bkg(bin_edges2, hist2, bin_edges2)
+                #         threshold2 = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background2))
+                #         
+                #         
+                #     else:
+                #         background = np.ones(len(hist)) * np.mean(hist2)
+                #         threshold = poisson.ppf(1 - 0.001/bin_number, background)
+                #         background2 = np.ones(len(hist2)) * np.mean(hist2)
+                #         threshold2 = poisson.ppf(1 - 0.001/bin_number, background2)
+                #         
+                #     trigger_time_index = np.argwhere(hist2 > threshold2)
+                #     hist2 = np.delete(hist2,trigger_time_index)
+                #     bin_edges2 = np.delete(bin_edges2, trigger_time_index)
+                #     
+                #     if exclude_times > 50:
+                #         break
                 
-                exclude_times=1
-                while len(trigger_time_index)>0:
+                # New version: exclude all bins between first and last trigger bin
+                trigger_time_index = np.argwhere(hist > threshold)
+                if len(trigger_time_index) > 0:
+                    exclude_start = trigger_time_index[0][0]
+                    exclude_end = trigger_time_index[-1][0]
+                    exclude_index = np.arange(exclude_start, exclude_end + 1)
+                else:
+                    exclude_index = []
                     
-                    # print(f'len of bin_edges2: {len(bin_edges2[:-1])}')
-                    # print(f'len of hist2: {len(hist2)}')
-                    # print(marker_1)
-                    exclude_times+=1
+                hist2 = np.delete(hist, exclude_index)
+                bin_edges2 = np.delete(bin_edges[:-1], exclude_index)
+                
+                exclude_times = 1
+                while len(trigger_time_index) > 0:
+                    
+                    exclude_times += 1
                     
                     if np.mean(hist2) > 3:
                         background = fit_bkg(bin_edges2, hist2, bin_edges[:-1])
-                        threshold = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background))
+                        threshold = np.nan_to_num(poisson.ppf(1 - threshold_p_value/bin_number, background))
                         background2 = fit_bkg(bin_edges2, hist2, bin_edges2)
-                        threshold2 = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, background2))
-                        
-                        
+                        threshold2 = np.nan_to_num(poisson.ppf(1 - threshold_p_value/bin_number, background2))
                     else:
                         background = np.ones(len(hist)) * np.mean(hist2)
-                        threshold = poisson.ppf(1 - 0.001/bin_number, background)
+                        threshold = poisson.ppf(1 - threshold_p_value/bin_number, background)
                         background2 = np.ones(len(hist2)) * np.mean(hist2)
-                        threshold2 = poisson.ppf(1 - 0.001/bin_number, background2)
+                        threshold2 = poisson.ppf(1 - threshold_p_value/bin_number, background2)
                         
                     trigger_time_index = np.argwhere(hist2 > threshold2)
-                    hist2 = np.delete(hist2,trigger_time_index)
-                    bin_edges2 = np.delete(bin_edges2, trigger_time_index)
+                    if len(trigger_time_index) > 0:
+                        exclude_start = trigger_time_index[0][0]
+                        exclude_end = trigger_time_index[-1][0]
+                        exclude_index = np.arange(exclude_start, exclude_end + 1)
+                        
+                        hist2 = np.delete(hist2, exclude_index)
+                        bin_edges2 = np.delete(bin_edges2, exclude_index)
                     
                     if exclude_times > 50:
                         break
@@ -169,6 +211,7 @@ def find_trigger(file_name, df, df_list, df_name_list, bin_size_list):
                     trigger_time_list.append(trigger_time_temp)
                     end_time_temp_list.append(end_time_temp)
                     end_time_list.append(end_time_temp)
+                    trigger_bin_size_list.append(bin_size)
                     
                 # Plot light curve, bkg & threshold
                 ax = list(product('01', '01234'))[data_idx]
@@ -196,16 +239,19 @@ def find_trigger(file_name, df, df_list, df_name_list, bin_size_list):
     if trigger_time_list != []:
         trigger_time = np.min(trigger_time_list)
         end_time = np.max(end_time_list)
+        best_bin_size = np.min(trigger_bin_size_list)
         print('==============================')
         print(f'Trigger time: {trigger_time}')
         print(f'End time: {end_time}')
+        print(f'Min trigger time bin: {best_bin_size}')
     else:
         trigger_time = None
         end_time = None
+        best_bin_size = None
         print('==============================')
         print('No any trigger was detected!')
     
-    return trigger_time, end_time
+    return trigger_time, end_time, best_bin_size
 
 def fit_bkg(x, y, text_x):
     
@@ -225,7 +271,7 @@ def fit_bkg(x, y, text_x):
     
     return prediction.flatten()
 
-def find_time_info(file_name, df_list, df_name_list, trigger_time, end_time, best_bin_size, best_case_name):
+def find_time_info(file_name, df_list, df_name_list, trigger_time, end_time, best_bin_size, best_case_name, threshold_p_value=0.001):
 
     # Decide forward & backward time bin number
     forward_time_bin_number = 50
@@ -253,10 +299,86 @@ def find_time_info(file_name, df_list, df_name_list, trigger_time, end_time, bes
         np.histogram(data['Relative Time']-trigger_time, bins=bin_edges, density=False)
             
         # Fit bkg
-        used_head_tail_bin = 50
-        bkg = fit_bkg(x=np.concatenate((bin_edges[:used_head_tail_bin], bin_edges[-used_head_tail_bin:])), 
-                      y=np.concatenate((hist[:used_head_tail_bin], hist[-used_head_tail_bin:])), 
-                      text_x=bin_edges[:-1])
+        # used_head_tail_bin = 50
+        # bkg = fit_bkg(x=np.concatenate((bin_edges[:used_head_tail_bin], bin_edges[-used_head_tail_bin:])), 
+        #               y=np.concatenate((hist[:used_head_tail_bin], hist[-used_head_tail_bin:])), 
+        #               text_x=bin_edges[:-1])
+        
+        # Fit bkg by iteratively excluding bins higher than Poisson threshold
+        if np.mean(hist) > 3:
+            bkg = fit_bkg(bin_edges[:-1], hist, bin_edges[:-1])
+            threshold = np.nan_to_num(poisson.ppf(1 - threshold_p_value/bin_number, bkg))
+        else:
+            bkg = np.ones(len(hist)) * np.mean(hist)
+            threshold = poisson.ppf(1 - threshold_p_value/bin_number, bkg)
+            
+        # Old version: only exclude bins higher than threshold
+        # trigger_time_index = np.argwhere(hist > threshold)
+        # hist2 = np.delete(hist, trigger_time_index)
+        # bin_edges2 = np.delete(bin_edges[:-1], trigger_time_index)
+        # 
+        # exclude_times = 1
+        # while len(trigger_time_index) > 0:
+        #     
+        #     exclude_times += 1
+        #     
+        #     if np.mean(hist2) > 3:
+        #         bkg = fit_bkg(bin_edges2, hist2, bin_edges[:-1])
+        #         threshold = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, bkg))
+        #         bkg2 = fit_bkg(bin_edges2, hist2, bin_edges2)
+        #         threshold2 = np.nan_to_num(poisson.ppf(1 - 0.001/bin_number, bkg2))
+        #     else:
+        #         bkg = np.ones(len(hist)) * np.mean(hist2)
+        #         threshold = poisson.ppf(1 - 0.001/bin_number, bkg)
+        #         bkg2 = np.ones(len(hist2)) * np.mean(hist2)
+        #         threshold2 = poisson.ppf(1 - 0.001/bin_number, bkg2)
+        #         
+        #     trigger_time_index = np.argwhere(hist2 > threshold2)
+        #     hist2 = np.delete(hist2, trigger_time_index)
+        #     bin_edges2 = np.delete(bin_edges2, trigger_time_index)
+        #     
+        #     if exclude_times > 50:
+        #         break
+        
+        # New version: exclude all bins between first and last trigger bin
+        trigger_time_index = np.argwhere(hist > threshold)
+        if len(trigger_time_index) > 0:
+            exclude_start = trigger_time_index[0][0]
+            exclude_end = trigger_time_index[-1][0]
+            exclude_index = np.arange(exclude_start, exclude_end + 1)
+        else:
+            exclude_index = []
+            
+        hist2 = np.delete(hist, exclude_index)
+        bin_edges2 = np.delete(bin_edges[:-1], exclude_index)
+        
+        exclude_times = 1
+        while len(trigger_time_index) > 0:
+            
+            exclude_times += 1
+            
+            if np.mean(hist2) > 3:
+                bkg = fit_bkg(bin_edges2, hist2, bin_edges[:-1])
+                threshold = np.nan_to_num(poisson.ppf(1 - threshold_p_value/bin_number, bkg))
+                bkg2 = fit_bkg(bin_edges2, hist2, bin_edges2)
+                threshold2 = np.nan_to_num(poisson.ppf(1 - threshold_p_value/bin_number, bkg2))
+            else:
+                bkg = np.ones(len(hist)) * np.mean(hist2)
+                threshold = poisson.ppf(1 - threshold_p_value/bin_number, bkg)
+                bkg2 = np.ones(len(hist2)) * np.mean(hist2)
+                threshold2 = poisson.ppf(1 - threshold_p_value/bin_number, bkg2)
+                
+            trigger_time_index = np.argwhere(hist2 > threshold2)
+            if len(trigger_time_index) > 0:
+                exclude_start = trigger_time_index[0][0]
+                exclude_end = trigger_time_index[-1][0]
+                exclude_index = np.arange(exclude_start, exclude_end + 1)
+                
+                hist2 = np.delete(hist2, exclude_index)
+                bin_edges2 = np.delete(bin_edges2, exclude_index)
+            
+            if exclude_times > 50:
+                break
             
         # Plot light curve, bkg & threshold
         ax = list(product('01', '01234'))[data_idx]
@@ -474,4 +596,3 @@ def recover_time(day_of_year, hour, minute, second): # subsecond???
      
     return time
 #====================
-

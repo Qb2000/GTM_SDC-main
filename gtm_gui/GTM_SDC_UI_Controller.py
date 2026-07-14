@@ -17,6 +17,8 @@ from GTM_SDC_UI_Controller_Mtl_Cmd import UiMtlCmd
 from GTM_SDC_UI_Controller_Decoder import UiDecoder
 from GTM_SDC_UI_Controller_Localizer import UiLocalizer
 
+APP_VERSION = "2026a"
+
 class MainWindowController(QtWidgets.QMainWindow, UiFlow, UiMtlCmd, UiDecoder, UiLocalizer):
     def __init__(self):
 
@@ -27,6 +29,7 @@ class MainWindowController(QtWidgets.QMainWindow, UiFlow, UiMtlCmd, UiDecoder, U
         # Import Ui_MainWindow
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowTitle(f"GTM/SDC - GUI {APP_VERSION}")
         self.ui_specific_MTL_window = None
         # Run Backend
         self.setup_controller()

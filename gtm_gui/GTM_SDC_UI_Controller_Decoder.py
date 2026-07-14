@@ -751,6 +751,7 @@ class UiDecoder(object):
                                                                                                         title=f'{y_label_list[i-2]}')
                 globals()[f'self.decoder_plot_sync_master_{(i-2)%4}_{(i-2)//4}'].plot(info_list[1],info_list[i],pen=pg.mkPen('#1f77b4', width=2))
                 globals()[f'self.decoder_plot_sync_master_{(i-2)%4}_{(i-2)//4}'].setLabel('left', y_label_list[i-2])
+                
         else:
             for i in range(2,len(info_list)):
                 globals()[f'self.decoder_plot_sync_slave_{(i-2)%4}_{(i-2)//4}'] = globals()['self.decoder_plot_sync_slave'].addPlot(row=(i-2)%4, 

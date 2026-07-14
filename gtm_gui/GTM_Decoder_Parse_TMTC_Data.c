@@ -67,7 +67,7 @@ int parse_tmtc_data(int input_file_pointer) {
 
                 // check 128 bytes tmtc tail
                 if (!is_tmtc_icd_tail(tmtc_144_byte_buffer+TMTC_PACKET_HEADER_SIZE+TMTC_DATA_FIELD_HEADER_SIZE+126)) { 
-                    log_error("Please check tmtc tail defined by ICD!");
+                    log_error("Please check tmtc tail defined by ICD! (in space)");
                 }
 
                 // if all data is healthy, parse it out

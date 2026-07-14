@@ -13,6 +13,7 @@ import time
 import numpy as np
 import pandas as pd
 from itertools import product
+from datetime import datetime, timedelta, timezone
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -368,9 +369,10 @@ class UiDecoderThread(QThread):
            
         self.master_sync_data = self.decoder_plot_sync_grouped_df.get_group((0,))
         self.slave_sync_data = self.decoder_plot_sync_grouped_df.get_group((1,))
-        self.master_x_label = self.decoder_plot_sync_grouped_df.get_group((0,)).index
-        self.slave_x_label = self.decoder_plot_sync_grouped_df.get_group((1,)).index
-        
+        # self.master_x_label = self.decoder_plot_sync_grouped_df.get_group((0,)).index
+        # self.slave_x_label = self.decoder_plot_sync_grouped_df.get_group((1,)).index
+        self.master_x_label = self.decoder_plot_sync_grouped_df.get_group((0,))['Day of Year'] + self.decoder_plot_sync_grouped_df.get_group((0,))['Hour']/24 + self.decoder_plot_sync_grouped_df.get_group((0,))['Minute']/1440 + self.decoder_plot_sync_grouped_df.get_group((0,))['Second']/86400
+        self.slave_x_label = self.decoder_plot_sync_grouped_df.get_group((1,))['Day of Year'] + self.decoder_plot_sync_grouped_df.get_group((1,))['Hour']/24 + self.decoder_plot_sync_grouped_df.get_group((1,))['Minute']/1440 + self.decoder_plot_sync_grouped_df.get_group((1,))['Second']/86400
         self.light_curve_hist = orifinal_df.groupby(['GTM ID','PPS']).agg({'Counts':'count'})
         self.light_curve_hist_master = self.light_curve_hist.loc[0]
         self.light_curve_hist_slave = self.light_curve_hist.loc[1]
@@ -449,7 +451,21 @@ class UiDecoderThread(QThread):
                 fine_time.iloc[start_row:] += fine_time.iloc[base_add_row]
         
         return fine_time * time_precision_s
+    # def convert_doy_to_timestamp(self, year, doy, hour, minute, second):
 
+    #     # 1. 將 DataFrame 中的欄位組合出可用於 pandas.to_datetime 解析的字串序列
+    #     # 格式: "%Y-%j %H:%M:%S" (%j 代表 Day of Year)
+    #     date_str_series = str(year) + '-' + doy.astype(str).str.zfill(3) + ' ' + \
+    #                       hour.astype(str).str.zfill(2) + ':' + \
+    #                       minute.astype(str).str.zfill(2) + ':' + \
+    #                       second.astype(str).str.zfill(2)
+        
+    #     # 2. 將字串序列轉換為 datetime，並指定 UTC 時區
+    #     dt_series = pd.to_datetime(date_str_series, format='%Y-%j %H:%M:%S', utc=True)
+        
+    #     # 3. 轉換為 Unix 時間戳 (秒)
+    #     # dt_series.astype('int64') 預設會轉換為奈秒 (nanoseconds)，除以 10**9 轉換為秒
+    #     return dt_series.astype('int64') // 10**9
     def simplify_label(self, df):
         sensor_name =  ['M1', 'M2', 'M3', 'M4', 'S1', 'S2', 'S3', 'S4']
         sensor_channel_shift = [16, 0, 16, 0, 16, 0, 16, 0]
@@ -471,7 +487,23 @@ class UiDecoderThread(QThread):
         df['Sensor Channel'] = df['Channel'] - df['Sensor Channel Shift']
         
         return df
+    def convert_day_to_timestamp(self, year, df):
+
+        first_valid_index = (df[['Day of Year','Hour','Minute','Second']]!= 0).any(axis=1)
+        minimun_utc = df[first_valid_index].iloc[0]
         
+            
+        base_date = datetime(year, 1, 1) \
+                    + pd.to_timedelta(minimun_utc['Day of Year'].astype(int)-1, unit='d')\
+                    + pd.to_timedelta(minimun_utc['Hour'].astype(int), unit='h')\
+                    + pd.to_timedelta(minimun_utc['Minute'].astype(int), unit='m')\
+                    + pd.to_timedelta(minimun_utc['Second'].astype(int), unit='s')
+
+        df['utc'] = (
+            base_date + pd.to_timedelta((df['PPS']-minimun_utc['PPS']).astype(int), unit='s')
+        )
+        df['Time Stamp'] = df['utc'].astype('int64') //10**9
+        return df
     def concatenate_df(self, df_total, df_partial):
     
         if df_total.empty: # copy df_partial as df_total
@@ -524,6 +556,7 @@ class UiDecoderThread(QThread):
             ref_df = pd.DataFrame({'Sensor Name': [], 'Sensor Channel': [], 'Gain': [], 'Gain Ratio': [], 'Jump':[]})
 
             gtm_simplified_df = self.simplify_label(orifinal_df)
+            gtm_simplified_df = self.convert_day_to_timestamp(2026, gtm_simplified_df)
             gtm_simplified_df = gtm_simplified_df.drop(columns=['Day of Year', 'Hour', 'Minute', 'Second', 'Subsecond', 
                     'X', 'Y','Z', 'Q1', 'Q2', 'Q3', 'Q4',
                     'CITIROC', 'Channel', 'Sensor Channel Shift']
@@ -543,8 +576,9 @@ class UiDecoderThread(QThread):
                 # Concatenate data
                 gtm_fixed_temp_df = self.concatenate_df(gtm_fixed_temp_df, module_data)
             # Clean & rearrange df
-            
-            gtm_fixed_df = gtm_fixed_temp_df[['Relative Time', 'Sensor Name', 'Sensor Channel', 'Gain', 'ADC']]
+            gtm_fixed_temp_df['Time Stamp'] = gtm_fixed_temp_df['Time Stamp'] + gtm_fixed_temp_df['Fine Time']*3.84e-6
+            gtm_fixed_temp_df['Time Stamp'] = gtm_fixed_temp_df['Time Stamp']*1000 # sec turn into ms
+            gtm_fixed_df = gtm_fixed_temp_df[['Relative Time', 'Sensor Name', 'Sensor Channel', 'Gain', 'ADC', 'Time Stamp']]
 
             # Group df for finding hg/lg ratio
             gtm_grouped_2_df = gtm_fixed_df.groupby(['Sensor Name', 'Sensor Channel', 'Gain'])
@@ -599,10 +633,10 @@ class UiDecoderThread(QThread):
 
             # Remove lg < lg_jump
             gtm_final_df = gtm_merged_df[gtm_merged_df['ADC'] >= gtm_merged_df['Jump']]
-            gtm_final_df = gtm_final_df[['Relative Time', 'Sensor Name', 'Sensor Channel', 'Merged ADC']]
+            gtm_final_df = gtm_final_df[['Relative Time', 'Sensor Name', 'Sensor Channel', 'Merged ADC', 'Time Stamp']]
             
             # Save df to pkl
-            gtm_final_df.to_pickle(self.filedir_filename_list[0]+f'/{self.filedir_filename_list[1]}_{config_df["Sensor Name"].item()}_lg2hg._origin.pkl')
+            gtm_final_df.to_pickle(self.filedir_filename_list[0]+f'/{self.filedir_filename_list[1]}_lg2hg._origin.pkl')
             
             self.gtm_final_df_data = gtm_final_df.groupby(['Sensor Name', 'Sensor Channel'])
             # print(ref_df)
@@ -944,7 +978,7 @@ class UiDecoderThread(QThread):
 
                     combine_config = ((config_module, config_citiroc, channel_idx+channel_shift))
                     hist, bin_edges, jump_pos, Sensor_name, Sensor_Channel, position = self.decoder_combine_hg_lg_data(self.decoder_plot_science_df, config_module, config_citiroc, channel_idx+channel_shift)
-                    print(f'from thread {jump_pos}')
+                    # print(f'from thread {jump_pos}')
                     self.decoder_thread_plot_update_science_hg_lg_combine_signal.emit([True, update, Sensor_name, citiroc, 
                                                                             position, channel_idx, channel_shift, sensor_name,
                                                                             jump_pos, hg_line_color, hist, bin_edges,

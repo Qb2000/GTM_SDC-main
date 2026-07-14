@@ -103,7 +103,7 @@ def circle_saa(file, level):
     # Collect all contour
     xx_all = []
     yy_all = []
-    for p in contour.collections[0].get_paths():
+    for p in contour.get_paths():
         v = p.vertices
         xx = v[:,0]
         xx_all.append(xx)
@@ -187,8 +187,15 @@ def in_saa(time, line_saa, line_orbit):
             
             if nomal_flag == True:
                 
-                # Group to out & in
-                out_in_times_group = np.array(in_out_times[1:-1]).reshape((int((len(in_out_times)-2)/2), 2))
+                # Group to out & in (need even number of middle points)
+                middle = in_out_times[1:-1]
+                if len(middle) % 2 != 0:
+                    middle = middle[:-1]  # drop last odd point
+                if len(middle) == 0:
+                    recover_in_out_times = [in_out_times[0], in_out_times[-1]]
+                    all_in_out_times.append(recover_in_out_times)
+                    continue
+                out_in_times_group = np.array(middle).reshape((len(middle)//2, 2))
             
                 # Delete gap when new_in - old_out too quick!
                 delete_list = []
@@ -210,22 +217,29 @@ def in_saa(time, line_saa, line_orbit):
                     
                     if len(in_out_times) != 1:
                     
-                        # Group to out & in
-                        out_in_times_group = np.array(in_out_times[:-1]).reshape((int((len(in_out_times)-1)/2), 2))
+                        # Group to out & in (need even number of points)
+                        pts = in_out_times[:-1]
+                        if len(pts) % 2 != 0:
+                            pts = pts[:-1]
+                        if len(pts) == 0:
+                            recover_in_out_times = [splitted_time[orbit_idx][0].tt, in_out_times[-1]]
+                            all_in_out_times.append(recover_in_out_times)
+                        else:
+                            out_in_times_group = np.array(pts).reshape((len(pts)//2, 2))
                     
-                        # Delete gap when new_in - old_out too quick!
-                        delete_list = []
-                        for out_in_times_idx, out_in_times in enumerate(out_in_times_group):
-                            out_time = out_in_times[0]
-                            in_time = out_in_times[1]
-                            if (in_time - out_time) < 0.0035: # ~ 5mins (1min ~ tt=0.00069)
-                                delete_list.append(out_in_times_idx)
-                        out_in_times_group = np.delete(out_in_times_group, delete_list, axis=0)
-                        out_in_times_group = out_in_times_group.flatten().tolist()
-                    
-                        # Recover in & out times
-                        recover_in_out_times = [splitted_time[orbit_idx][0].tt] + out_in_times_group + [in_out_times[-1]]
-                        all_in_out_times.append(recover_in_out_times)
+                            # Delete gap when new_in - old_out too quick!
+                            delete_list = []
+                            for out_in_times_idx, out_in_times in enumerate(out_in_times_group):
+                                out_time = out_in_times[0]
+                                in_time = out_in_times[1]
+                                if (in_time - out_time) < 0.0035: # ~ 5mins (1min ~ tt=0.00069)
+                                    delete_list.append(out_in_times_idx)
+                            out_in_times_group = np.delete(out_in_times_group, delete_list, axis=0)
+                            out_in_times_group = out_in_times_group.flatten().tolist()
+                        
+                            # Recover in & out times
+                            recover_in_out_times = [splitted_time[orbit_idx][0].tt] + out_in_times_group + [in_out_times[-1]]
+                            all_in_out_times.append(recover_in_out_times)
                     
                     else:
                         recover_in_out_times = [splitted_time[orbit_idx][0].tt] + in_out_times
@@ -236,22 +250,29 @@ def in_saa(time, line_saa, line_orbit):
                     
                     if len(in_out_times) != 1:
                         
-                        # Group to out & in
-                        out_in_times_group = np.array(in_out_times[1:]).reshape((int((len(in_out_times)-1)/2), 2))
+                        # Group to out & in (need even number of points)
+                        pts = in_out_times[1:]
+                        if len(pts) % 2 != 0:
+                            pts = pts[1:]
+                        if len(pts) == 0:
+                            recover_in_out_times = [in_out_times[0], splitted_time[orbit_idx][-1].tt]
+                            all_in_out_times.append(recover_in_out_times)
+                        else:
+                            out_in_times_group = np.array(pts).reshape((len(pts)//2, 2))
                     
-                        # Delete gap when new_in - old_out too quick!
-                        delete_list = []
-                        for out_in_times_idx, out_in_times in enumerate(out_in_times_group):
-                            out_time = out_in_times[0]
-                            in_time = out_in_times[1]
-                            if (in_time - out_time) < 0.0035: # ~ 5mins (1min ~ tt=0.00069)
-                                delete_list.append(out_in_times_idx)
-                        out_in_times_group = np.delete(out_in_times_group, delete_list, axis=0)
-                        out_in_times_group = out_in_times_group.flatten().tolist()
-                    
-                        # Recover in & out times
-                        recover_in_out_times = [in_out_times[-1]] + out_in_times_group + [splitted_time[orbit_idx][-1].tt]
-                        all_in_out_times.append(recover_in_out_times)
+                            # Delete gap when new_in - old_out too quick!
+                            delete_list = []
+                            for out_in_times_idx, out_in_times in enumerate(out_in_times_group):
+                                out_time = out_in_times[0]
+                                in_time = out_in_times[1]
+                                if (in_time - out_time) < 0.0035: # ~ 5mins (1min ~ tt=0.00069)
+                                    delete_list.append(out_in_times_idx)
+                            out_in_times_group = np.delete(out_in_times_group, delete_list, axis=0)
+                            out_in_times_group = out_in_times_group.flatten().tolist()
+                        
+                            # Recover in & out times
+                            recover_in_out_times = [in_out_times[-1]] + out_in_times_group + [splitted_time[orbit_idx][-1].tt]
+                            all_in_out_times.append(recover_in_out_times)
                         
                     else:
                         recover_in_out_times = in_out_times + [splitted_time[orbit_idx][-1].tt]

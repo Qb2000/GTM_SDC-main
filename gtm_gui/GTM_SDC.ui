@@ -17,7 +17,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>GTM/SDC - GUI</string>
+   <string>GTM/SDC - GUI 2026a</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="Title">
@@ -55,7 +55,7 @@
      </font>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>4</number>
     </property>
     <widget class="QWidget" name="tab_flow">
      <attribute name="title">
@@ -1780,8 +1780,8 @@ p, li { white-space: pre-wrap; }
        <rect>
         <x>20</x>
         <y>10</y>
-        <width>450</width>
-        <height>351</height>
+        <width>461</width>
+        <height>391</height>
        </rect>
       </property>
       <property name="font">
@@ -2018,8 +2018,8 @@ p, li { white-space: pre-wrap; }
       <widget class="QPushButton" name="find_search_grb_button">
        <property name="geometry">
         <rect>
-         <x>260</x>
-         <y>300</y>
+         <x>270</x>
+         <y>320</y>
          <width>150</width>
          <height>40</height>
         </rect>
@@ -2037,8 +2037,8 @@ p, li { white-space: pre-wrap; }
       <widget class="QPushButton" name="find_preview_lc_button">
        <property name="geometry">
         <rect>
-         <x>40</x>
-         <y>300</y>
+         <x>30</x>
+         <y>350</y>
          <width>210</width>
          <height>40</height>
         </rect>
@@ -2053,25 +2053,43 @@ p, li { white-space: pre-wrap; }
         <string>Preview Light Curve</string>
        </property>
       </widget>
-     </widget>
-     <widget class="Line" name="localizer_line">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>370</y>
-        <width>450</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
+      <widget class="QWidget" name="gridLayoutWidget_3">
+       <property name="geometry">
+        <rect>
+         <x>30</x>
+         <y>300</y>
+         <width>211</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <layout class="QGridLayout" name="Threshold_P_Value_setting">
+        <item row="0" column="0">
+         <widget class="QLabel" name="Threshold_P_Value_label">
+          <property name="font">
+           <font>
+            <pointsize>11</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Threshold P-value:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="Threshold_P_Value_line">
+          <property name="text">
+           <string>0.001</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
      <widget class="QGroupBox" name="localize_group">
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>390</y>
+        <y>420</y>
         <width>450</width>
         <height>210</height>
        </rect>
@@ -2159,6 +2177,19 @@ p, li { white-space: pre-wrap; }
         <enum>Qt::Horizontal</enum>
        </property>
       </widget>
+     </widget>
+     <widget class="Line" name="localizer_line">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>400</y>
+        <width>450</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
      </widget>
     </widget>
    </widget>
