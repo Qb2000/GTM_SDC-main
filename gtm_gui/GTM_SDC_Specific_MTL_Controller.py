@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from GTM_SDC_specific_MTL import Ui_specific_MTL_window  
 from GTM_SDC_specific_CMD_DAC_HV_setting_Controller import CmdDacHvSettingWindow
+from GTM_SDC_CMD_Config import DEFAULT_OBC, OBC_CMD_SEL_VALUES
 from datetime import datetime, timedelta
 import numpy as np
 
@@ -23,6 +24,18 @@ class SpecificMTLWindow(QtWidgets.QMainWindow):
         self.setup()
 
     def setup(self):
+        # Keep every orbit's controls accessible as rows are added or resized.
+        self.setWindowTitle("Specific MTL")
+        self.resize(1100, 600)
+        main_layout = QtWidgets.QVBoxLayout(self.ui.centralwidget)
+        main_layout.addWidget(self.ui.groupBox)
+        group_layout = QtWidgets.QVBoxLayout(self.ui.groupBox)
+        self.row_scroll_area = QtWidgets.QScrollArea()
+        self.row_scroll_area.setWidgetResizable(True)
+        self.row_scroll_area.setWidget(self.ui.verticalLayoutWidget)
+        group_layout.addWidget(self.row_scroll_area)
+        main_layout.addWidget(self.ui.Generate_specific_MTL, 0, Qt.AlignHCenter)
+        self.ui.Generate_specific_MTL.setMinimumSize(241, 41)
         self.ui.Generate_specific_MTL.setEnabled(True)
         self.ui.Generate_specific_MTL.clicked.connect(self.generate)
         self.ui.verticalLayout.setAlignment(Qt.AlignTop)
@@ -79,7 +92,16 @@ class SpecificMTLWindow(QtWidgets.QMainWindow):
         grid_layout.addWidget(polar_cb,  0, 5)
         grid_layout.addWidget(sunlit_cb, 0, 6)
 
-        grid_layout.addWidget(clone_button(self.ui.CMD_config, "CMD_config"), 0, 7)
+        cmd_btn = clone_button(self.ui.CMD_config, "CMD_config")
+        grid_layout.addWidget(cmd_btn, 0, 7)
+
+        obc_combo = QtWidgets.QComboBox()
+        obc_combo.setObjectName("obc_combo")
+        obc_combo.setAccessibleName("OBC")
+        obc_combo.setToolTip("GTM communication OBC for this orbit")
+        obc_combo.addItems(list(OBC_CMD_SEL_VALUES))
+        obc_combo.setCurrentText(DEFAULT_OBC)
+        grid_layout.addWidget(obc_combo, 0, 8)
 
         # use_timming 控制 dateTimeEdit 和 checkbox 的 enabled 狀態
         def _apply_timing_mode(checked, s=start_dt, e=end_dt,
@@ -97,17 +119,19 @@ class SpecificMTLWindow(QtWidgets.QMainWindow):
         )
 
         # CMD_config 按鈕連接到本 row 的設定視窗
-        cmd_btn = grid_layout.itemAt(7).widget()
         # 為這個 row 建立獨立的 config_data dict
-        config_data = {}
+        config_data = {'obc': DEFAULT_OBC}
         self._cmd_config_data[new_row] = config_data
+        obc_combo.currentTextChanged.connect(
+            lambda obc, cfg=config_data: cfg.update(obc=obc)
+        )
         cmd_btn.clicked.connect(lambda checked, rw=new_row: self._open_cmd_config(rw))
 
         # 加、減按鈕
         add_btn = clone_button(self.ui.add_row, "+")
         remove_btn = clone_button(self.ui.remove_row, "-")
-        grid_layout.addWidget(add_btn, 0, 8)
-        grid_layout.addWidget(remove_btn, 0, 9)
+        grid_layout.addWidget(add_btn, 0, 9)
+        grid_layout.addWidget(remove_btn, 0, 10)
 
         # 按鈕連接功能（可動態控制）
         add_btn.clicked.connect(self.add_row_function)
@@ -115,15 +139,13 @@ class SpecificMTLWindow(QtWidgets.QMainWindow):
         
         
         # 插入指定位置
-        if self.row_count > 0:
-            for i in range(self.ui.verticalLayout.count()):
-                item = self.ui.verticalLayout.itemAt(i).widget()
-                if item.children()[0].layout().itemAt(8).widget() == sender:
-                    index = item.children()[0].layout().itemAt(0).widget().text()[0]
-                    break
-            self.ui.verticalLayout.insertWidget(int(index)+1, new_row)
-        else:
-            self.ui.verticalLayout.addWidget(new_row)
+        insert_index = self.ui.verticalLayout.count()
+        for i in range(1, self.ui.verticalLayout.count()):
+            item = self.ui.verticalLayout.itemAt(i).widget()
+            if item.layout().itemAtPosition(0, 9).widget() == sender:
+                insert_index = i + 1
+                break
+        self.ui.verticalLayout.insertWidget(insert_index, new_row)
             
         # for i in range(self.ui.verticalLayout.count()):    
         #     item = self.ui.verticalLayout.itemAt(i).widget()
@@ -177,16 +199,16 @@ class SpecificMTLWindow(QtWidgets.QMainWindow):
         self.update_row_numbers()
         if self.row_count == 1:
            row_widget = self.ui.verticalLayout.itemAt(1).widget()
-           remove_botton = row_widget.children()[0].layout().itemAt(9).widget()
+           remove_botton = row_widget.layout().itemAtPosition(0, 10).widget()
            remove_botton.setEnabled(False)
   
     def update_row_numbers(self):
         for i in range(1,self.ui.verticalLayout.count()):
             row_widget = self.ui.verticalLayout.itemAt(i).widget()
             if row_widget:
-                number_label = row_widget.children()[0].layout().itemAt(0).widget()
+                number_label = row_widget.layout().itemAtPosition(0, 0).widget()
                 number_label.setText(f"{i}.")
-                remove_botton = row_widget.children()[0].layout().itemAt(9).widget()
+                remove_botton = row_widget.layout().itemAtPosition(0, 10).widget()
                 if self.row_count > 1:
                     remove_botton.setEnabled(True)             
                  
@@ -255,7 +277,7 @@ class SpecificMTLWindow(QtWidgets.QMainWindow):
 
         for i in range(1, self.ui.verticalLayout.count()):
             item = self.ui.verticalLayout.itemAt(i).widget()
-            layout = item.children()[0].layout()
+            layout = item.layout()
 
             use_timing = layout.itemAt(1).widget().isChecked()   # use_timming
             row_start_dt = layout.itemAt(2).widget().dateTime().toPyDateTime()

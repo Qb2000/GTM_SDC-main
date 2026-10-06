@@ -13,6 +13,7 @@ from GTM_SDC_UI_Controller_Mtl_Cmd_Backend import *
 from datetime import datetime, timedelta
 
 from GTM_SDC_Specific_MTL_Controller import SpecificMTLWindow
+from GTM_SDC_CMD_Config import DEFAULT_DAC_VALUES, DEFAULT_OBC, apply_obc_selection
 
 class UiMtlCmd(object):
 
@@ -273,13 +274,25 @@ class UiMtlCmd(object):
         self.ui.mtl_generate_button.setEnabled(False)
         self.ui.cmd_generate_button.setEnabled(False)
         
-    def format_gtm_cfg_command(self, byte_values: list) -> str:
+    def selected_obc(self):
+        """Read the main-page selection; headless/specific generators default to A."""
+        combo = getattr(getattr(self, 'ui', None), 'cmd_obc_combo', None)
+        return combo.currentText() if combo is not None else DEFAULT_OBC
+
+    def cmd_obc_changed(self):
+        # Allow regeneration after changing OBC on an already generated timeline.
+        if len(getattr(self, 'mtl_on_off_minutes_group', [])) > 0:
+            self.ui.cmd_generate_button.setEnabled(True)
+
+    def format_gtm_cfg_command(self, byte_values: list, obc=None) -> str:
         """
         計算 2~124 byte 的 checksum，寫入倒數第 3 個 byte，並格式化為 XML 所需的字串。
         byte_values: 長度必須為 128 的整數 list (例如: [0x55, 0xAA, 0x5F, ...])
         """
         if len(byte_values) != 128:
             raise ValueError(f"GTM 指令長度必須為 128 bytes，目前為 {len(byte_values)} bytes")
+
+        apply_obc_selection(byte_values, self.selected_obc() if obc is None else obc)
 
         # 1. 計算 Checksum (Index 2 到 124，共 123 個 bytes)
         checksum = sum(byte_values[2:125]) & 0xFF
@@ -300,13 +313,14 @@ class UiMtlCmd(object):
         indent = " " * 28
         return f"\n{indent}".join(lines)
 
-    def format_gtm_cfg_command_json(self, byte_values: list) -> str:
+    def format_gtm_cfg_command_json(self, byte_values: list, obc=None) -> str:
         """
         計算 checksum 後，格式化為 JSON content 所需的單行字串。
         回傳格式：" CMD GTM_CFG 0x55 0xAA ... SRC=MPQ"
         """
         if len(byte_values) != 128:
             raise ValueError(f"GTM 指令長度必須為 128 bytes，目前為 {len(byte_values)} bytes")
+        apply_obc_selection(byte_values, self.selected_obc() if obc is None else obc)
         checksum = sum(byte_values[2:125]) & 0xFF
         byte_values[125] = checksum
         hex_str = ' '.join([f"0x{val:02X}" for val in byte_values])
@@ -407,10 +421,8 @@ class UiMtlCmd(object):
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0xFF, 
-                0xFF, 0xFF, 0xFF, 0x22, 0xF1, 0x19, 0x85, 0xF9, 0xF9, 0x25, 
-                0xC9, 0x05, 0x49, 0x45, 0xA9, 0x99, 0xB9, 0x39, 0xE5, 0x09, 
-                0x95, 0x69, 0x55, 0x59, 0x19, 0x19, 0x59, 0x31, 0x59, 0x05, 
-                0x45, 0x25, 0x0E, 0xE5, 0x29, 0x99, 0xFF, 0xFF, 0xFF, 0xFF, 
+                0xFF, 0xFF, 0xFF, 0x22, *DEFAULT_DAC_VALUES['M_A'],
+                0xFF, 0xFF, 0xFF, 0xFF,
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
@@ -422,10 +434,8 @@ class UiMtlCmd(object):
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0xFF, 
-                0xFF, 0xFF, 0xFF, 0x22, 0x79, 0xA9, 0x71, 0xF9, 0xE9, 0xC9, 
-                0x49, 0xC9, 0xE9, 0x99, 0x05, 0x49, 0x31, 0x19, 0xA9, 0x9E, 
-                0x91, 0xD1, 0x69, 0x39, 0x31, 0x39, 0x09, 0xE1, 0x71, 0x51, 
-                0xE1, 0x11, 0x11, 0x09, 0x0A, 0xE1, 0xFF, 0xFF, 0xFF, 0xFF,    
+                0xFF, 0xFF, 0xFF, 0x22, *DEFAULT_DAC_VALUES['M_B'],
+                0xFF, 0xFF, 0xFF, 0xFF,
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
@@ -437,10 +447,8 @@ class UiMtlCmd(object):
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0xFF, 
-                0xFF, 0xFF, 0xFF, 0x22, 0x1C, 0x82, 0x22, 0x42, 0xD2, 0x22, 
-                0xFC, 0xBC, 0x82, 0xBC, 0x9C, 0xC2, 0x1C, 0x92, 0xD2, 0x6C, 
-                0x5C, 0x02, 0x9C, 0xFC, 0x0A, 0x7C, 0x3C, 0xC2, 0x42, 0xA2, 
-                0x7C, 0xFC, 0x7C, 0xA2, 0x42, 0x22, 0xFF, 0xFF, 0xFF, 0xFF, 
+                0xFF, 0xFF, 0xFF, 0x22, *DEFAULT_DAC_VALUES['S_A'],
+                0xFF, 0xFF, 0xFF, 0xFF,
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
@@ -452,10 +460,8 @@ class UiMtlCmd(object):
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 
                 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0xFF, 
-                0xFF, 0xFF, 0xFF, 0x22, 0xAE, 0x4E, 0xD6, 0xB6, 0x0E, 0xB6, 
-                0x36, 0x26, 0xAA, 0x1A, 0x26, 0xC6, 0x76, 0x76, 0x16, 0xD6, 
-                0xE2, 0x92, 0x52, 0x42, 0xE2, 0x32, 0xA2, 0x02, 0x32, 0x12, 
-                0xF2, 0x32, 0xB2, 0xB2, 0x12, 0x52, 0xFF, 0xFF, 0xFF, 0xFF, 
+                0xFF, 0xFF, 0xFF, 0x22, *DEFAULT_DAC_VALUES['S_B'],
+                0xFF, 0xFF, 0xFF, 0xFF,
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
                 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 
@@ -464,17 +470,19 @@ class UiMtlCmd(object):
             ]
 
             # 套用本 orbit 的 CMD config（若有設定）
-            # PROC_5=Master-B, PROC_6=Master-A, PROC_7=Slave-B, PROC_8=Slave-A
+            # PROC_5=Master-A, PROC_6=Master-B, PROC_7=Slave-A, PROC_8=Slave-B
             # 對應 all_procs_bytes index 4~7
             cmd_config_data_list = getattr(self, 'cmd_config_data_list', [])
+            obc = self.selected_obc()
             if mtl_on_off_minutes_idx < len(cmd_config_data_list):
                 cfg = cmd_config_data_list[mtl_on_off_minutes_idx]
+                obc = cfg.get('obc', obc)
                 if cfg:
                     citiroc_map = [
-                        (4, 'M_B_ch', 'M_B_HV_DAC_setting'),  # PROC_5 Master-B
-                        (5, 'M_A_ch', 'M_A_HV_DAC_setting'),  # PROC_6 Master-A
-                        (6, 'S_B_ch', 'S_B_HV_DAC_setting'),  # PROC_7 Slave-B
-                        (7, 'S_A_ch', 'S_A_HV_DAC_setting'),  # PROC_8 Slave-A
+                        (4, 'M_A_ch', 'M_A_HV_DAC_setting'),  # PROC_5 Master-A
+                        (5, 'M_B_ch', 'M_B_HV_DAC_setting'),  # PROC_6 Master-B
+                        (6, 'S_A_ch', 'S_A_HV_DAC_setting'),  # PROC_7 Slave-A
+                        (7, 'S_B_ch', 'S_B_HV_DAC_setting'),  # PROC_8 Slave-B
                     ]
                     for proc_idx, ch_prefix, hv_key in citiroc_map:
                         proc = all_procs_bytes[proc_idx]
@@ -539,7 +547,7 @@ class UiMtlCmd(object):
             # GTM CFG sections (PROC_1~8)
             gtm_sections = []
             for idx, proc_bytes in enumerate(all_procs_bytes):
-                content = self.format_gtm_cfg_command_json(proc_bytes)
+                content = self.format_gtm_cfg_command_json(proc_bytes, obc=obc)
                 gtm_sections.append({
                     "header": f"# --- SECTION: GTM ON PROC {idx+1} ---",
                     "lines": [{"offset": self.PROC_STEP_OFFSET, "symbol": "^", "content": content}]
@@ -547,7 +555,7 @@ class UiMtlCmd(object):
 
             sections = [
                 {"header": "# --- SECTION: POWER ON SPL ---", "lines": power_on_lines}
-            ] + gtm_sections + self.cmd_write_off_xml(off_start_offset)
+            ] + gtm_sections + self.cmd_write_off_xml(off_start_offset, obc=obc)
 
             prc_json = {
                 "source":      "FS8B SDC",
@@ -768,7 +776,7 @@ class UiMtlCmd(object):
 
     #             f.write(cmd_xml_time_line_on)
 
-    def cmd_write_off_xml(self, first_offset="00:00:00.000"):
+    def cmd_write_off_xml(self, first_offset="00:00:00.000", obc=None):
 
             # Build OFF sections for the per-orbit combined JSON; no standalone OFF file is written.
             # =====================================================================
@@ -849,7 +857,7 @@ class UiMtlCmd(object):
             for idx, proc_bytes in enumerate(off_procs_bytes):
                 offset = first_offset if idx == 0 else self.PROC_STEP_OFFSET
                 symbol = "" if idx == 0 else "^"
-                content = self.format_gtm_cfg_command_json(proc_bytes)
+                content = self.format_gtm_cfg_command_json(proc_bytes, obc=obc)
                 gtm_off_sections.append({
                     "header": f"# --- SECTION: GTM OFF PROC {idx+1} ---",
                     "lines": [{"offset": offset, "symbol": symbol, "content": content}]

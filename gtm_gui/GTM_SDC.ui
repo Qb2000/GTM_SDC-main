@@ -920,10 +920,24 @@ p, li { white-space: pre-wrap; }
       <property name="title">
        <string>Command Line:</string>
       </property>
+      <widget class="QLabel" name="cmd_obc_label">
+       <property name="geometry">
+        <rect><x>20</x><y>40</y><width>50</width><height>40</height></rect>
+       </property>
+       <property name="text"><string>OBC:</string></property>
+       <property name="buddy"><cstring>cmd_obc_combo</cstring></property>
+      </widget>
+      <widget class="QComboBox" name="cmd_obc_combo">
+       <property name="geometry">
+        <rect><x>75</x><y>40</y><width>115</width><height>40</height></rect>
+       </property>
+       <item><property name="text"><string>OBCA</string></property></item>
+       <item><property name="text"><string>OBCB</string></property></item>
+      </widget>
       <widget class="QPushButton" name="cmd_generate_button">
        <property name="geometry">
         <rect>
-         <x>130</x>
+         <x>220</x>
          <y>40</y>
          <width>190</width>
          <height>40</height>

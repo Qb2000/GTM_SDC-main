@@ -117,6 +117,7 @@ class MainWindowController(QtWidgets.QMainWindow, UiFlow, UiMtlCmd, UiDecoder, U
         # Generate CMD
         self.ui.cmd_generate_button.setEnabled(False)
         self.ui.cmd_generate_button.clicked.connect(self.cmd_generate)
+        self.ui.cmd_obc_combo.currentTextChanged.connect(self.cmd_obc_changed)
 
         ### mtl_cmd_end ###
         

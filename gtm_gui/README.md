@@ -98,4 +98,16 @@ python GTM_SDC_Start.py
 
 ## Utility
 
-...
+### MTL / CMD OBC selection and DAC defaults
+
+- In **MTL / CMD > Command Line**, choose **OBCA** or **OBCB** before generating commands. The default is OBCA. Changing the selection after generation enables the command Generate button again.
+- In **specific MTL**, each orbit row has its own OBC dropdown beside **CMD_config**. Every new row defaults to OBCA, independently of the main-page selection. The selected OBC applies to every ON and OFF command for that row, including all intervals produced by its orbit filters.
+- Byte 119 is set to exactly `0x00` for OBCA or `0x03` for OBCB, matching the existing **BUS_A_NEW / BUS_B_NEW** procedures. Under ICD CDRL-1009 NSPO 240926_L, table 5-1, these values select PPS_A / PPS_B respectively while keeping SpaceWire in AUTO mode. Byte 125 is recalculated as the sum of bytes 2-124 modulo 256 after applying all settings. Byte numbers are zero-based.
+- Channel DAC defaults come from **DAC_setup_with_FS8A_panel_temperature.xlsx**, **sheet1 column D** (`new DAC value hex for FS8A panel T`), matched by the channel names in column B. The four sets of 32 channels populate bytes 44-75 of the Master-A, Master-B, Slave-A and Slave-B configuration commands. Both ordinary generation and the specific MTL DAC editor use these defaults. Per-orbit edits remain available through **CMD_config**.
+
+To run the command and GUI regression tests in the installed GUI environment:
+
+```text
+conda activate env_gtm
+python -B -m unittest discover -s tests -v
+```

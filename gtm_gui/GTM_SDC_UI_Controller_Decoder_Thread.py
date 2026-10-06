@@ -153,7 +153,7 @@ class UiDecoderThread(QThread):
                 self.decoder_update_time_s = 0 # 0 == False
 
             else: # plot continuously
-                self.decoder_update_time_s = int(self.parent.ui.Update_Rate_comboBox.currentText())
+                self.decoder_update_time_s = int(self.parent.ui.decoder_update_time_combo_box.currentText())
 
         # Loop all file
         for decoder_cached_input_file_idx, decoder_cached_input_file in enumerate(self.parent.decoder_cached_input_file_list):
@@ -311,22 +311,22 @@ class UiDecoderThread(QThread):
 
     def decoder_load_df(self, filename, df, skip_number):
 
+        # Keep the first CSV header and skip rows already read
+        df_new = pd.read_csv(filename, sep=';', skiprows=range(1, skip_number + 1))
+        skip_number += df_new.shape[0]
+
+        # The C decoder writes another header on every update
+        df_new = df_new[df_new.iloc[:, 0] != df_new.columns[0]].copy()
+        for column in df_new.columns:
+            try:
+                df_new[column] = pd.to_numeric(df_new[column])
+            except ValueError: # Keep text columns such as hexadecimal Header and Tail
+                pass
+
         if df.empty: # without data
-            df = pd.read_csv(filename, sep=';')
-        
-        else: # with data
-
-            # Load new data
-            df_new = pd.read_csv(filename, sep=';', skiprows=skip_number)
-            
-            # Add column from old data for concatenate
-            df_new.columns = df.columns
-
-            # Concatenate df
-            df = pd.concat([df, df_new], axis=0, ignore_channel_idx=True)
-        
-        # Update skip number
-        skip_number = df.shape[0]
+            df = df_new.reset_index(drop=True)
+        elif not df_new.empty: # with new data
+            df = pd.concat([df, df_new], axis=0, ignore_index=True)
         
         return df, skip_number
 
@@ -568,10 +568,10 @@ class UiDecoderThread(QThread):
             for gtm_id_idx, gtm_id in enumerate(gtm_grouped_1_df.groups.keys()):
             
                 # Extract data from certain module
-                module_data = gtm_grouped_1_df.get_group((gtm_id,))
+                module_data = gtm_grouped_1_df.get_group((gtm_id,)).copy()
                 
                 # Calculate relative time only with fine time due to pps issue
-                module_data.insert(0, 'Relative Time', self.fix_pps_issue(module_data).to_list())
+                module_data['Relative Time'] = self.fix_pps_issue(module_data)
                 
                 # Concatenate data
                 gtm_fixed_temp_df = self.concatenate_df(gtm_fixed_temp_df, module_data)
@@ -636,7 +636,7 @@ class UiDecoderThread(QThread):
             gtm_final_df = gtm_final_df[['Relative Time', 'Sensor Name', 'Sensor Channel', 'Merged ADC', 'Time Stamp']]
             
             # Save df to pkl
-            gtm_final_df.to_pickle(self.filedir_filename_list[0]+f'/{self.filedir_filename_list[1]}_lg2hg._origin.pkl')
+            gtm_final_df.to_pickle(self.filedir_filename_list[0]+f'/{self.filedir_filename_list[1]}_origin.pkl')
             
             self.gtm_final_df_data = gtm_final_df.groupby(['Sensor Name', 'Sensor Channel'])
             # print(ref_df)
@@ -685,6 +685,23 @@ class UiDecoderThread(QThread):
         # Load df
         self.decoder_plot_science_df, self.decoder_plot_science_df_skip_number \
         = self.decoder_load_df(filename_list[0], self.decoder_plot_science_df, self.decoder_plot_science_df_skip_number)
+
+        # Add relative time only after decoding is complete. In real-time mode, the C
+        # decoder may append rows that still use the original CSV column layout.
+        if self.decoder_update_time_s == 0:
+            relative_time = pd.Series(index=self.decoder_plot_science_df.index, dtype='float64')
+            for _, module_data in self.decoder_plot_science_df.groupby('GTM ID', sort=False):
+                module_relative_time = self.fix_pps_issue(module_data)
+                relative_time.loc[module_relative_time.index] = module_relative_time.to_numpy()
+
+            # Append the column if missing, or update it if it already exists
+            self.decoder_plot_science_df['Relative Time'] = relative_time
+
+            # Add the sensor label required by Localizer
+            self.decoder_plot_science_df = self.simplify_label(self.decoder_plot_science_df)
+
+            # Localizer reads comma-separated CSV files
+            self.decoder_plot_science_df.to_csv(filename_list[0], index=False)
         
         # Group df
         self.decoder_plot_science_grouped_df = self.decoder_plot_science_df.groupby(['GTM ID', 'CITIROC', 'Channel', 'Gain'])

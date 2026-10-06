@@ -383,6 +383,23 @@ class UiDecoder(object):
         # Store layout for closing
         self.decoder_plot_open_window_list.append(self.decoder_plot_tmtc_pg_layout)
 
+        # Create one check window for each selected module
+        self.decoder_plot_tmtc_check_module_list = []
+        if self.ui.decoder_display_selection_master_group.isChecked():
+            self.decoder_plot_tmtc_check_module_list.append('Master')
+        if self.ui.decoder_display_selection_slave_group.isChecked():
+            self.decoder_plot_tmtc_check_module_list.append('Slave')
+
+        self.decoder_plot_tmtc_check_layout = {}
+        self.decoder_plot_tmtc_check_line = {}
+        for module in self.decoder_plot_tmtc_check_module_list:
+            layout = pg.GraphicsLayoutWidget(title=f'TMTC Check - {module}')
+            layout.resize(1400, 800)
+            layout.setBackground('w')
+            layout.show()
+            self.decoder_plot_tmtc_check_layout[module] = layout
+            self.decoder_plot_open_window_list.append(layout)
+
     def decoder_plot_open_window_science(self):
         
         # For sync plot data
@@ -674,6 +691,9 @@ class UiDecoder(object):
         else: # just display on screen
             pass
     
+        # Plot the additional TMTC checks
+        self.decoder_plot_tmtc_check(df_list)
+
     def decoder_update_plot_tmtc(self, df_list):
 
         if self.ui.decoder_display_selection_master_group.isChecked() and \
@@ -700,9 +720,6 @@ class UiDecoder(object):
         # Show layout
         self.decoder_plot_tmtc_pg_layout.show()
 
-        # Keep the application responsive!
-        QtWidgets.QApplication.processEvents()  
-
         if self.ui.decoder_auto_save_figure_group.isEnabled() and \
             self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
                 
@@ -712,6 +729,98 @@ class UiDecoder(object):
 
         else: # just display on screen
             pass
+
+        # Update the additional TMTC checks
+        self.decoder_plot_tmtc_check(df_list, update=True)
+
+        # Process events after saving, so the next update cannot change the filename
+        QtWidgets.QApplication.processEvents()
+
+    def decoder_plot_tmtc_check(self, df_list, update=False):
+
+        # Subplot title, CSV columns and legend names (same order as plot_TMTC_try.py)
+        plot_info = [
+            ('Source Sequence Count', ['Source Sequence Count'], ['']),
+            ('Packet Counter', ['Packet Counter'], ['']),
+            ('Lastest PPS Counter', ['Lastest PPS Counter'], ['']),
+            ('Board Temperature', ['Board Temperature#1', 'Board Temperature#2'], ['#1', '#2']),
+            ('Trigger Counter', ['CITIROC1 Trigger Counter', 'CITIROC2 Trigger Counter'], ['CITI1', 'CITI2']),
+            ('Checksum', ['Checksum'], ['']),
+            ('Header', ['Header'], ['']),
+            ('Tail', ['Tail'], [''])
+        ]
+
+        for module_idx, module in enumerate(self.decoder_plot_tmtc_check_module_list):
+            df = df_list[module_idx]
+            layout = self.decoder_plot_tmtc_check_layout[module]
+
+            # Space data use GICD time; ground data only have ICD time
+            if 'GICD Day' in df.columns:
+                time_prefix = 'GICD'
+            else:
+                time_prefix = 'ICD'
+            time_data = (df[f'{time_prefix} Day'] + df[f'{time_prefix} Hour'] / 24
+                         + df[f'{time_prefix} Minute'] / 24 / 60
+                         + df[f'{time_prefix} Second'] / 24 / 60 / 60).to_numpy()
+
+            if not update:
+                self.decoder_plot_tmtc_check_line[module] = {}
+
+            for plot_idx, (title, columns, names) in enumerate(plot_info):
+                if not update:
+                    plot = layout.addPlot(row=plot_idx // 4, col=plot_idx % 4,
+                                          title=title, labels={'bottom': f'{time_prefix} Time [day]'})
+                    plot.setTitle(title, color='k')
+                    for axis in ['left', 'bottom']:
+                        plot.getAxis(axis).setPen('k')
+                        plot.getAxis(axis).setTextPen('k')
+                    # Link to Packet Counter, which also exists in ground data
+                    if plot_idx == 1:
+                        layout.getItem(0, 0).setXLink(plot)
+                    elif plot_idx > 1:
+                        plot.setXLink(layout.getItem(0, 1))
+                    if len(columns) == 2:
+                        plot.addLegend(labelTextColor='k')
+                    if title == 'Board Temperature':
+                        plot.setLabel('left', 'Temperature [°C]')
+                    elif title in ['Header', 'Tail']:
+                        plot.setLabel('left', 'Value [decimal]')
+
+                for column_idx, column in enumerate(columns):
+                    # Ground TMTC does not contain Source Sequence Count
+                    if column not in df.columns:
+                        if not update:
+                            plot.setTitle(f'{title} (not available)', color='k')
+                        continue
+
+                    if column in ['Header', 'Tail']:
+                        # CSV stores Header and Tail as hexadecimal text
+                        values = np.array([int(str(value), 16) for value in df[column]])
+                        color = 'r'
+                    else:
+                        values = df[column].to_numpy()
+                        color = ['#1f77b4', '#ff7f0e'][column_idx]
+
+                    if update:
+                        self.decoder_plot_tmtc_check_line[module][column].setData(time_data, values)
+                    else:
+                        self.decoder_plot_tmtc_check_line[module][column] = plot.plot(
+                            time_data, values, pen=pg.mkPen(color=color, width=2), name=names[column_idx])
+
+            layout.show()
+
+            if self.ui.decoder_auto_save_figure_group.isEnabled() and \
+            self.ui.decoder_auto_save_figure_on_check_box.isChecked(): # need auto-save figure
+                suffix = ''
+                if update:
+                    suffix = f'_{self.decoder_update_counter}'
+                # Draw once to measure tick labels before saving
+                layout.grab()
+                layout.ci.layout.activate()
+                exporter = pg.exporters.ImageExporter(layout.scene())
+                exporter.export(os.path.join(self.decoder_cached_input_file_dirname,
+                                f'{self.decoder_cached_input_file_basename}.decoder_plot_tmtc_check_{module.lower()}{suffix}.png'))
+
     # plot light curve
     def decoder_plot_light_curve(self, info_list):
         
