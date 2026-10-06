@@ -98,6 +98,20 @@ python GTM_SDC_Start.py
 
 ## Utility
 
+### Flow terminal output
+
+Run the GUI from a terminal to see Flow **Update**, **Clone**, and **Push** reports.
+Each report identifies the operation and transfer direction, then prints the refreshed
+file-list or transfer logs, including file names and any recorded SFTP errors. Update
+refreshes directory listings; Clone and Push report downloads and uploads respectively.
+SOCC transfer details come from the logs retrieved from the Operation server. The same
+reporting applies to the Archiving controls.
+
+The GUI stays responsive while scripts run. Passwords are masked, and missing or
+unchanged logs are explicitly identified instead of showing an old transfer as a new
+result. The script exit code is reported separately because a script may exit zero
+even when an individual SFTP command fails.
+
 ### MTL / CMD OBC selection and DAC defaults
 
 - In **MTL / CMD > Command Line**, choose **OBCA** or **OBCB** before generating commands. The default is OBCA. Changing the selection after generation enables the command Generate button again.
